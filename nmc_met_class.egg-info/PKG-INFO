@@ -1,0 +1,15 @@
+Metadata-Version: 1.1
+Name: nmc-met-class
+Version: 0.1.0
+Summary: A collections of basic functions for meteorological verification.
+Home-page: UNKNOWN
+Author: The R & D Center for Weather Forecasting Technology in NMC, CMA
+Author-email: liucouhua@163.com
+License: GPL3
+Description: # nmc_met_class
+        提供一些轻量级的气象数据结构，以及基于这些数据结构进行的基本操作
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: Python :: 3

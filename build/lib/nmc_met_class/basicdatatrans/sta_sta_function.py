@@ -13,10 +13,9 @@ def copy(sta):
     return deepcopy(sta)
 
 def recover(sta_from,sta_to):
-    sta_to.drop_duplicates(keep='first', inplace=True)
-    sta_from.drop_duplicates(keep='first', inplace=True)
     ids = sta_to.index.intersection(sta_from.index)
     sta = sta_to.copy()
+    sta_from.drop_duplicates(keep='first',inplace=True)
     sta.ix[ids,'data'] = sta_from.ix[ids,'data']
     return sta
 

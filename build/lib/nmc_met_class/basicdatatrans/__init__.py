@@ -9,4 +9,3 @@ import nmc_met_class.basicdatatrans.read_sta as rs
 import nmc_met_class.basicdatatrans.sta_sta_function as ssf
 import nmc_met_class.basicdatatrans.write_grid as wg
 import nmc_met_class.basicdatatrans.write_sta as ws
-import nmc_met_class.basicdatatrans.sta_grid_function as sgf
