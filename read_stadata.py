@@ -12,22 +12,22 @@ from pandas import DataFrame
 import pandas as pd
 import json
 import urllib3
+from dict import *
+from sta_data import sta_data
 
 #读取micaps1-2-8
-def read_from_micaps1_2_8(filename,column,station = None,time=None,dtime=None,
-                      dtime_type="hour",level= None,level_type="surface"):
+def read_from_micaps1_2_8(filename,column,station = None):
     if os.path.exists(filename):
-        sta1 = pd.read_csv(filename, skiprows=2, sep="\s+", header=None, usecols= [0,1,2,column],index_col=0)
+        sta01 = pd.read_csv(filename, skiprows=2, sep="\s+", header=None, usecols= [0,1,2,column],index_col=0)
         #index_str = np.array(df.index.tolist()).astype("str")
         #df = pd.DataFrame(df.values,index=index_str)
         #sta1 = bd.sta_data(df, column)
-        level = ['level1']
-        sta =['sta2']
-        time = ['time1', 'time2']
-        dtime = ['dtime1', 'dtime2', 'dtime3', 'dtime4']
-        sta1 = DataFrame(sta1,
-                        columns=pd.MultiIndex.from_product([['lon', 'lat','alt','data'],]),
-                        index=pd.MultiIndex.from_product([level,sta,time,dtime]))
+        sta1= pd.DataFrame(sta01)
+        if sta1.shape[1] ==8:
+            print("m2格式数据")
+        elif sta1.shape[1] ==11:
+            print("m4格式数据")
+        sta1 = sta_data(sta01)
         #sta1.columns = ['lon', 'lat','alt','data']
         if(station is None):
             return sta1

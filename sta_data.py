@@ -20,20 +20,22 @@ import xarray as xr
 1.外层标签必须是经过排序的；
 2.每个索引的外层标签第一个字母必须得一致，要么全是大写，要么全是小写
 '''
-#level_type='surface'dtime_type=None
 
-def sta_data(dframe,level=None,level_type=None,sta_num=None,time=None,dtime=None,dtime_type = "hour"):
-    #传过来的参数为列表
+def sta_data(dframe):
     columns = ['lon','lat','alt']
-    level_type,dtime_type
     data_num = dframe.shape[1] - 2
     for i in range(0,data_num):
         data = data + str(i)
         columns.append(data)
-    # columns = [0, 1, column_num]
-    #     # sta_num = ['a', 'a', 'b', 'b']
-    #     # time = [1,2,3,4]
-    #     # prescription = ['w', 'x', 'y', 'z']
-    return pd.DataFrame(dframe.ix[:,dframe.shape[1]].values,
-                        index=[level,time,dtime,sta_num],
-                        columns = columns)
+    line = dframe.shape[0]
+    level = ['level1']
+    sta = ['sta2']
+    time = ['time1', 'time2']
+    dtime = ['dtime1', 'dtime2', 'dtime3', 'dtime4']
+    length = len(line) * len(sta) * len(time) * len(dtime)
+    if line == length:
+        return pd.DataFrame(dframe.ix[:,dframe.shape[1]].values,
+                        columns=pd.MultiIndex.from_product([columns,]),
+                        index=pd.MultiIndex.from_product([level,sta,time,dtime]))
+    else:
+        print("索引值不对应，重新检查")

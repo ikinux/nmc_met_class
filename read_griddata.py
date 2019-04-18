@@ -13,9 +13,9 @@ import math
 import struct
 import xarray as xr
 import datetime
-
+import grid_data
 #读取micaps4格式的格点数据
-def read_from_micaps4(filename,grid = None,member=None,times=None,dhs=None,level=None,lat=None,lon=None):
+def read_from_micaps4(filename,grid = None):
     try:
         if not os.path.exists(filename):
             print(filename + " is not exist")
@@ -40,10 +40,9 @@ def read_from_micaps4(filename,grid = None,member=None,times=None,dhs=None,level
         nlat = int(strs[16])
         elon = slon + dlon * (nlon -1)
         elat = slat + dlat * (nlat -1)
-        grid1 = (slon,dlon,elon,slat,dlat,elat)
-        grd = xr.DataArray(grid1, coords={'member': member, 'times': times, 'dhs': dhs, 'level': level,
-                                   'lat': lat, 'lon': lon},
-                     dims=['level', 'time', 'dhs', 'member'])
+        #创建一个对应的格点的文件格式
+        grid1 = grid_data.grid(slon,dlon,elon,slat,dlat,elat)
+        grd = grid_data.grid_data_struct(grid1)
         #grd = bd.grid_data(bd.grid(slon,dlon,elon,slat,dlat,elat))
         if len(strs) - 22 >= grd.nlon * grd.nlat :
             k=22
@@ -60,8 +59,7 @@ def read_from_micaps4(filename,grid = None,member=None,times=None,dhs=None,level
         return None
 
 
-def read_grd_array_by_ctl(filename,ctl = None,endian = None,member=None,
-                          times=None,dhs=None,level=None,lat=None,lon=None):
+def read_grd_array_by_ctl(filename,ctl = None,endian = None):
     if ctl is None:
         if os.path.exists(filename):
             ctl = read_ctl(filename)
@@ -75,9 +73,9 @@ def read_grd_array_by_ctl(filename,ctl = None,endian = None,member=None,
             data = data.reshape(ctl.nvar, ctl.nensemble, ctl.ntime, ctl.nlevel, ctl.nlat, ctl.nlon)
             #print(data.shape)
             grid = (ctl.slon, ctl.dlon, ctl.elon, ctl.slat, ctl.dlat, ctl.elat)
-            grd = xr.DataArray(grid, coords={'member': member, 'times': times, 'dhs': dhs, 'level': level,
-                                             'lat': lat, 'lon': lon},
-                                    dims=['level', 'time', 'dhs', 'member'])
+            grd = xr.DataArray(grid, coords={'member': [0], 'times': [0], 'dhs': [0], 'level': [0],
+                                             'lat': [0], 'lon': [0]},
+                                    dims=['level', 'time', 'dhs', 'member','lat','lon'])
             #grid = bd.grid(ctl.slon, ctl.dlon, ctl.elon, ctl.slat, ctl.dlat, ctl.elat)
             arr = [[[[] for t in range(ctl.ntime)] for n in range(ctl.nensemble)] for v in range(ctl.nvar)]
             for v in range(ctl.nvar):
@@ -127,8 +125,7 @@ def read_ctl(ctl_filename):
         return None
 
 #读取压缩文件
-def read_from_compressed(filename,grid = None,member=None,times=None,dhs=None,
-                          level=None,lat=None,lon=None):
+def read_from_compressed(filename,grid = None):
     try:
         if not os.path.exists(filename):
             print(filename + " is not exist")
@@ -152,9 +149,9 @@ def read_from_compressed(filename,grid = None,member=None,times=None,dhs=None,
         grade_num = head2[2]
         if(grade_num == 0):
             grid = (slon, dlon, elon, slat, dlat, elat)
-            grd = xr.DataArray(grid, coords={'member': member, 'times': times, 'dhs': dhs, 'level': level,
-                                             'lat': lat, 'lon': lon},
-                               dims=['level', 'time', 'dhs', 'member'])
+            grd = xr.DataArray(grid, coords={'member': [0], 'times': [0], 'dhs': [0], 'level': [0],
+                                             'lat': [0], 'lon': [0]},
+                               dims=['level', 'time', 'dhs', 'member','lat','lon'])
             #grd = bt.grid_data(bt.grid(slon, dlon, elon, slat, dlat, elat))
             grd.dat[:,:] = vmin
             return grd
@@ -230,9 +227,9 @@ def read_from_nc(filename,valueName = None,member=None,times=None,
         dlon = (lons[-1] - lons[0]) / (len(lons) - 1)
         dlat = (lats[-1] - lats[0]) / (len(lats) - 1)
         grid = (lons[0],dlon,lons[-1],lats[0],dlat,lats[-1])
-        grd = xr.DataArray(grid, coords={'member': member, 'times': times, 'dhs': dhs, 'level': level,
-                                         'lat': lat, 'lon': lon},
-                           dims=['level', 'time', 'dhs', 'member'])
+        grd = xr.DataArray(grid, coords={'member': [0] , 'times': [0], 'dhs': [0], 'level': [0],
+                                         'lat': [0], 'lon': [0]},
+                           dims=['level', 'time', 'dhs', 'member','lat','lon'])
         #grd = bd.grid_data(bd.grid(lons[0],dlon,lons[-1],lats[0],dlat,lats[-1]))
         dat = np.squeeze(f.variables[valueName][:])
         if(str(type(dat)) == "<class 'numpy.ma.core.MaskedArray'>"):
@@ -255,8 +252,7 @@ def read_from_nc(filename,valueName = None,member=None,times=None,
         else:
             return bt.ggf.linearInterpolation(grd, grid)
 
-def read_from_gds_file(filename,member=None,times=None,
-                            dhs=None,level=None,lat=None,lon=None):
+def read_from_gds_file(filename,member=None):
     print("a")
     try:
         if not os.path.exists(filename):
@@ -282,9 +278,9 @@ def read_from_gds_file(filename,member=None,times=None,
             if (endLat > 90): endLat = 90.0
             if (endLat < -90): endLat = -90.0
             grid = (startLon, lonInterval, endLon, startLat, latInterval, endLat)
-            grd = xr.DataArray(grid, coords={'member': member, 'times': times, 'dhs': dhs, 'level': level,
-                                             'lat': lat, 'lon': lon},
-                               dims=['level', 'time', 'dhs', 'member'])
+            grd = xr.DataArray(grid, coords={'member': [0], 'times': [0], 'dhs': [0], 'level': [0],
+                                             'lat': [0], 'lon': [0]},
+                               dims=['level', 'time', 'dhs', 'member','lat','lon'])
             #grd = bd.grid_data(bd.grid(startLon, lonInterval, endLon, startLat, latInterval, endLat))
             grd.dat = np.frombuffer(byteArray[278:], dtype='float32').reshape(grd.nlat, grd.nlon)
             grd.reset()
@@ -305,7 +301,7 @@ def read_from_awx(filename):
     else:
         return None
 
-def explain_awx_bytes(byteArray,member=None,times=None,dhs=None,level=None,lat=None,lon=None):
+def explain_awx_bytes(byteArray):
     sat96 = struct.unpack("12s", byteArray[:12])[0]
     levl = np.frombuffer(byteArray[12:30], dtype='int16').astype(dtype = "int32")
     formatstr = struct.unpack("8s", byteArray[30:38])[0]
@@ -331,9 +327,9 @@ def explain_awx_bytes(byteArray,member=None,times=None,dhs=None,level=None,lat=N
 
     #grd = bd.grid_data(bd.grid(slon, dlon, elon, slat, dlat, elat))
     grid = (slon, dlon, elon, slat, dlat, elat)
-    grd = xr.DataArray(grid, coords={'member': member, 'times': times, 'dhs': dhs, 'level': level,
-                                     'lat': lat, 'lon': lon},
-                       dims=['level', 'time', 'dhs', 'member'])
+    grd = xr.DataArray(grid, coords={'member': [0], 'times': [0], 'dhs': [0], 'level': [0],
+                                     'lat': [0], 'lon': [0]},
+                       dims=['level', 'time', 'dhs', 'member','lat','lon'])
 
     colorlen = lev2[24]
     caliblen = lev2[25]

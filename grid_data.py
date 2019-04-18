@@ -15,23 +15,41 @@ import numpy as np
 grid(glon, glat, gtime = None, gdt = None, dtime_type="hour",levels=None)
 '''
 class grid:
-    def __init__(self):
-        'slon,elon,dlon,slat,elat,dlat,stime,dtime, sdt,edt,ddt,dtime_type,levels'
-        self.slon = 1
-        self.dlon = 1
-        self.elon = 1
-        self.slat = 1
-        self.dlat = 1
-        self.elat = 1
-        self.stime = 1
-        self.dtime = 1
-        self.sdt = 1
-        self.edt = 1
-        self.ddt = 1
-        self.dtime_type = 1
-        self.levels = 1
+    def __init__(self,slon,dlon,elon,slat,dlat,elat,stime,dtime,sdt,edt,ddt,dtime_type,level):
+        'slon,elon,dlon,slat,elat,dlat,stime,dtime,sdt,edt,ddt,dtime_type,levels'
+        self.slon = slon
+        self.dlon = dlon
+        self.elon = elon
+        self.slat = slat
+        self.dlat = dlat
+        self.elat = elat
+        self.stime = stime
+        self.dtime = dtime
+        self.sdt = sdt
+        self.edt = edt
+        self.ddt = ddt
+        self.dtime_type =dtime_type
+        self.levels = level
+        nlon = 1 + (elon - slon) / dlon
+        error = abs(round(nlon) - nlon)
+        if (error > 0.01):
+            self.nlon = math.ceil(nlon)
+        else:
+            self.nlon = int(round(nlon))
+        self.elon = self.slon + (nlon - 1) * dlon
+        nlat = 1 + (elat - slat) / dlat
+        error = abs(round(nlat) - nlat)
+        if (error > 0.01):
+            self.nlat = math.ceil(nlat)
+        else:
+            self.nlat = int(round(nlat))
+        self.elat = self.slat + (nlat - 1) * dlat
 
-    def grid_data_structure(self,grid,member=None,times=None,dhs=None,level=None,lat=None,lon=None):
-        return(xr.DataArray(grid, coords={'member': member, 'times': times,'dhs':dhs,'level': level,
-                                  'lat': lat, 'lon': lon},
-                          dims=['level','time','dhs','member']))
+    def grid(self,slon, elon, dlon, slat, elat, dlat):
+
+        return ([slon, elon, dlon], [slat, elat, dlat])
+
+    def grid_data_structure(self,grid):
+        return(xr.DataArray(grid, coords={'member': [0], 'times': [0],'dhs':[0],'level': [0],
+                                  'lat': [0], 'lon': [0]},
+                            dims=['level','time','dhs','member','lat','lon']))
