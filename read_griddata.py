@@ -41,7 +41,9 @@ def read_from_micaps4(filename,grid = None):
         elon = slon + dlon * (nlon -1)
         elat = slat + dlat * (nlat -1)
         #创建一个对应的格点的文件格式
-        grid1 = grid_data.grid(slon,dlon,elon,slat,dlat,elat)
+        glon = [slon,dlon,elon]
+        glat = [slat,dlat,elat]
+        grid1 = grid_data.grid(glon,glat)
         grd = grid_data.grid_data_struct(grid1)
         #grd = bd.grid_data(bd.grid(slon,dlon,elon,slat,dlat,elat))
         if len(strs) - 22 >= grd.nlon * grd.nlat :
