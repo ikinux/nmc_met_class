@@ -1,7 +1,7 @@
 #!/usr/bin/python3.6
 # -*- coding:UTF-8 -*-
 import math
-
+from datetime import datetime
 '''
 约定坐标顺序为: member, times,dhs, level, lat,lon
 添加一个grid类来存储网格的范围包括（起始经纬度、格距、起止时间，时间间隔，起止时效，时效间隔，层次列表）
@@ -18,14 +18,25 @@ class grid:
         self.dlat = glat[2]
         self.gtime = gtime
         if (self.gtime !=None):
-            self.stime = self.gtime[0]
-            self.etime = self.gtime[1]
-            self.dtime = self.gtime[2]
+            if type(self.gtime[0]) == str:
+                self.stime = datetime.strptime(self.gtime[0], '%Y%m%d%H')
+                self.etime = datetime.strptime(self.gtime[1], '%Y%m%d%H')
+                self.dtime = datetime.strptime(self.gtime[2], '%Y%m%d%H')
+            else:
+                self.stime = self.gtime[0]
+                self.etime = self.gtime[1]
+                self.dtime = self.gtime[2]
         self.gdt = gdt
         if (self.gdt !=None):
-            self.sdt = self.gdt[0]
-            self.edt = self.gdt[1]
-            self.ddt = self.gdt[2]
+            if type(self.gdt[0]) == str:
+                #将gdt的str数据读出dtime_type类型。然后将数据转换为datetime类型
+                # self.sdt = datetime.strptime(self.gdt[0], '%d%H')
+                # self.edt = datetime.strptime(self.gdt[1], '%d%H')
+                # self.ddt = datetime.strptime(self.gdt[2], '%d%H')
+            else:
+                self.sdt = self.gdt[0]
+                self.edt = self.gdt[1]
+                self.ddt = self.gdt[2]
         self.levels = levels
         nlon = 1 + (self.elon - self.slon) / self.dlon
         error = abs(round(nlon) - nlon)
