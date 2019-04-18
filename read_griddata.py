@@ -13,6 +13,7 @@ import math
 import struct
 import xarray as xr
 import datetime
+import grid
 import grid_data
 #读取micaps4格式的格点数据
 def read_from_micaps4(filename,grid = None):
@@ -40,11 +41,8 @@ def read_from_micaps4(filename,grid = None):
         nlat = int(strs[16])
         elon = slon + dlon * (nlon -1)
         elat = slat + dlat * (nlat -1)
-        #创建一个对应的格点的文件格式
-        glon = [slon,dlon,elon]
-        glat = [slat,dlat,elat]
-        grid1 = grid_data.grid(glon,glat)
-        grd = grid_data.grid_data_struct(grid1)
+        grid1 = grid([slon,dlon,elon],[slat,dlat,elat])
+        grd = grid_data(grid1)
         #grd = bd.grid_data(bd.grid(slon,dlon,elon,slat,dlat,elat))
         if len(strs) - 22 >= grd.nlon * grd.nlat :
             k=22
