@@ -21,23 +21,31 @@ class grid:
         if (self.gtime !=None):
             num1 =[]
             if type(self.gtime[0]) == str:
-                for i in range (0,3):
+                for i in range (0,2):
                     num = ''.join([x for x in gtime[i] if x.isdigit()])
                     #用户输入2019041910十位字符，后面补全加0000，为14位统一处理
-                    if len(num) == 10:
+                    if len(num) == 4:
+                        num1.append(num + "0101000000")
+                    elif len(num) == 6:
+                        num1.append(num + "01000000")
+                    elif len(num) == 8:
+                        num1.append(num + "000000")
+                    elif len(num) == 10:
                         num1.append(num + "0000")
                     elif len(num) == 12:
                         num1.append(num + "00")
-                    else:
+                    elif len(num) == 14:
                         num1.append(num)
+                    else:
+                        print("输入日期有误，请检查！")
                     #统一将日期变为datetime类型
-                    self.stime = datetime.strptime(num1[0], '%Y%m%d%H%M%S')
-                    self.etime = datetime.strptime(num1[1], '%Y%m%d%H%M%S')
-                    self.dtime = datetime.strptime(num1[2], '%Y%m%d%H%M%S')
+                self.stime = datetime.strptime(num1[0], '%Y%m%d%H%M%S')
+                self.etime = datetime.strptime(num1[1], '%Y%m%d%H%M%S')
+                self.dtime = re.findall(r"\D+", gtime[2])[0]
             else:
                 self.stime = self.gtime[0]
                 self.etime = self.gtime[1]
-                self.dtime = self.gtime[2]
+                self.dtime = re.findall(r"\D+", gtime[2])[0]
         self.gdt = gdt
         if (self.gdt !=None):
             num2 = []
@@ -54,7 +62,7 @@ class grid:
                     dtime_type = "hour"
                 elif TIME_type == 'd':
                     dtime_type = "day"
-        self.gtime = dtime_type
+        self.dtime_type = dtime_type
         self.levels = levels
         nlon = 1 + (self.elon - self.slon) / self.dlon
         error = abs(round(nlon) - nlon)
