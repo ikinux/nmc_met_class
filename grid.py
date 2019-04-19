@@ -23,15 +23,17 @@ class grid:
             if type(self.gtime[0]) == str:
                 for i in range (0,3):
                     num = ''.join([x for x in gtime[i] if x.isdigit()])
-                    #用户输入2019041910十位字符，后面补全加00，为12位统一处理
+                    #用户输入2019041910十位字符，后面补全加0000，为14位统一处理
                     if len(num) == 10:
+                        num1.append(num + "0000")
+                    elif len(num) == 12:
                         num1.append(num + "00")
                     else:
                         num1.append(num)
                     #统一将日期变为datetime类型
-                    self.stime = datetime.strptime(num1[0], '%Y%m%d%H%M')
-                    self.etime = datetime.strptime(num1[1], '%Y%m%d%H%M')
-                    self.dtime = datetime.strptime(num1[2], '%Y%m%d%H%M')
+                    self.stime = datetime.strptime(num1[0], '%Y%m%d%H%M%S')
+                    self.etime = datetime.strptime(num1[1], '%Y%m%d%H%M%S')
+                    self.dtime = datetime.strptime(num1[2], '%Y%m%d%H%M%S')
             else:
                 self.stime = self.gtime[0]
                 self.etime = self.gtime[1]
