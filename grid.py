@@ -1,7 +1,7 @@
 #!/usr/bin/python3.6
 # -*- coding:UTF-8 -*-
 import math
-from datetime import datetime
+from datetime import datetime,timedelta
 import re
 '''
 约定坐标顺序为: member, times,dhs, level, lat,lon
@@ -9,7 +9,7 @@ import re
 '''
 
 class grid:
-    def __init__(self,glon, glat, gtime=None, gdt=None,dtime_type =None,levels=None):
+    def __init__(self,glon, glat, gtime=None, gdt=None,gdtime_type=None,levels=None):
         'slon,elon,dlon,slat,elat,dlat,stime,dtime,sdt,edt,ddt,dtime_type,levels'
         self.slon = glon[0]
         self.elon = glon[1]
@@ -44,7 +44,17 @@ class grid:
             else:
                 self.stime = self.gtime[0]
                 self.etime = self.gtime[1]
-            self.dtime = re.findall(r"\d+", gtime[2])[0]
+            self.dtimes = re.findall(r"\d+", gtime[2])[0]
+            dtime_type = re.findall(r"\D+", gtime[2])[0]
+            if dtime_type == 'h':
+                self.dtime_type ="hour"
+                self.dtimedelta = datetime.timedelta(hours=int(self.dtimes))
+            elif dtime_type == 'd':
+                self.dtime_type ="day"
+                self.dtimedelta = datetime.timedelta(days=int(self.dtimes))
+            elif dtime_type == 'm':
+                self.dtime_type ="minute"
+                self.dtimedelta = datetime.timedelta(minutes=int(self.dtimes))
         self.gdt = gdt
         if (self.gdt !=None):
             num2 = []
@@ -58,10 +68,21 @@ class grid:
                 #提取出dtime_type类型
                 TIME_type = re.findall(r"\D+", gdt[2])[0]
                 if TIME_type == 'h':
-                    dtime_type = "hour"
+                    gdtime_type = "hour"
+                    self.sdtimedelta = datetime.timedelta(hours=num2[0])
+                    self.edtimedelta = datetime.timedelta(hours=num2[1])
+                    self.ddtimedelta = datetime.timedelta(hours=num2[2])
                 elif TIME_type == 'd':
-                    dtime_type = "day"
-        self.dtime_type = dtime_type
+                    gdtime_type = "day"
+                    self.sdtimedelta = datetime.timedelta(days=num2[0])
+                    self.edtimedelta = datetime.timedelta(days=num2[1])
+                    self.ddtimedelta = datetime.timedelta(days=num2[2])
+                elif TIME_type == 'm':
+                    gdtime_type = "minute"
+                    self.sdtimedelta = datetime.timedelta(minutes=num2[0])
+                    self.edtimedelta = datetime.timedelta(minutes=num2[1])
+                    self.ddtimedelta = datetime.timedelta(minutes=num2[2])
+                self.gdtime_type = gdtime_type
         self.levels = levels
         nlon = 1 + (self.elon - self.slon) / self.dlon
         error = abs(round(nlon) - nlon)
