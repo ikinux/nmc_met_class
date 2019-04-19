@@ -41,11 +41,10 @@ class grid:
                     #统一将日期变为datetime类型
                 self.stime = datetime.strptime(num1[0], '%Y%m%d%H%M%S')
                 self.etime = datetime.strptime(num1[1], '%Y%m%d%H%M%S')
-                self.dtime = re.findall(r"\D+", gtime[2])[0]
             else:
                 self.stime = self.gtime[0]
                 self.etime = self.gtime[1]
-                self.dtime = re.findall(r"\D+", gtime[2])[0]
+            self.dtime = re.findall(r"\d+", gtime[2])[0]
         self.gdt = gdt
         if (self.gdt !=None):
             num2 = []
