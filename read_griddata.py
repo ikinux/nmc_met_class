@@ -29,8 +29,15 @@ def read_from_micaps4(filename,grid = None):
             file = open(filename,'r',encoding='utf-8')
             str1 = file.read()
             file.close()
-
         strs = str1.split()
+        if int(strs[0])>19:
+            year = str(19) + str(strs[0])
+        else:
+            year = str(20) + str(strs[0])
+        month = str(strs[1])
+        day = str(strs[2])
+        times = year + month + day
+
         dlon = float(strs[9])
         dlat = float(strs[10])
         slon = float(strs[11])
@@ -41,9 +48,9 @@ def read_from_micaps4(filename,grid = None):
         nlat = int(strs[16])
         elon = slon + dlon * (nlon -1)
         elat = slat + dlat * (nlat -1)
+
         grid1 = grid([slon,dlon,elon],[slat,dlat,elat])
         grd = grid_data(grid1)
-        #grd = bd.grid_data(bd.grid(slon,dlon,elon,slat,dlat,elat))
         if len(strs) - 22 >= grd.nlon * grd.nlat :
             k=22
             grd.dat = (np.array(strs[k:])).astype(float).reshape((grd.nlat,grd.nlon))

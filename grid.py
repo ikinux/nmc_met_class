@@ -3,6 +3,8 @@
 import math
 from datetime import datetime,timedelta
 import re
+from copy import deepcopy
+import time
 '''
 约定坐标顺序为: member, times,dhs, level, lat,lon
 添加一个grid类来存储网格的范围包括（起始经纬度、格距、起止时间，时间间隔，起止时效，时效间隔，层次列表）
@@ -98,3 +100,94 @@ class grid:
         else:
             self.nlat = int(round(nlat))
         self.elat = self.slat + (nlat - 1) * self.dlat
+
+    #tostring 的作用是重置系统自动的函数，在print(grid) 的时候可以很整齐的看到所有信息
+    def tostring(self):
+        if (self.gtime != None):
+            if (self.gdt != None):
+                if (self.levels != None):
+                    #gtime,gdt,levels都存在
+                    str1 = "nlon: " + str(self.nlon) + "    nlat: " + str(self.nlat) + \
+                           "\nslon: " + str(self.slon) + "    dlon: " + str(self.dlon) + "    elon: " + str(self.elon) + \
+                           "\nslat: " + str(self.slat) + "    dlat: " + str(self.dlat) + "    elat: " + str(self.elat) + \
+                           "\nstime: " + str(self.stime) + "    etime: " + str(self.etime) + "    dtime: " + str(self.dtime) + \
+                           "\ndtime_type: " + str(self.dtime_type) + "    dtimedelta: " + str(self.dtimedelta) + \
+                           "\nsdt: " + str(self.sdt) + "    edt: " + str(self.edt) + "    ddt: " + str(self.ddt) + \
+                           "\ngdtime_type: " + str(self.gdtime_type) + "    sdtimedelta: " + str(self.sdtimedelta) + "    edtimedelta: " + str(self.edtimedelta) + "    ddtimedelta: " + str(self.ddtimedelta) + \
+                           "\nlevels: " + str(self.levels) + "\n"
+                else:
+                    #gtime,gdt存在,levels不存在
+                    str1 = "nlon: " + str(self.nlon) + "    nlat: " + str(self.nlat) + \
+                           '\nslon: ' + str(self.slon) + "    dlon: " + str(self.dlon) + "    elon: " + str(self.elon) + \
+                           "\nslat: " + str(self.slat) + "    dlat: " + str(self.dlat) + "    elat: " + str(self.elat) + \
+                           "\nstime: " + str(self.stime) + "    etime: " + str(self.etime) + "    dtime: " + str(self.dtime) + \
+                           "\ndtime_type: " + str(self.dtime_type) + "    dtimedelta: " + str(self.dtimedelta) + \
+                           "\nsdt: " + str(self.sdt) + "    edt: " + str(self.edt) + "    ddt: " + str(self.ddt) + \
+                           "\ngdtime_type: " + str(self.gdtime_type) + "    sdtimedelta: " + str(self.sdtimedelta) + "    edtimedelta: " + str(self.edtimedelta) + "    ddtimedelta: " + str(self.ddtimedelta) + "\n"
+            else:
+                if (self.levels != None):
+                    # gtime，levels存在，gdt不存在
+                    str1 = "nlon: " + str(self.nlon) + "    nlat: " + str(self.nlat) + \
+                           "\nslon: " + str(self.slon) + "    dlon: " + str(self.dlon) + "    elon: " + str(self.elon) + \
+                           "\nslat: " + str(self.slat) + "    dlat: " + str(self.dlat) + "    elat: " + str(self.elat) + \
+                           "\nstime: " + str(self.stime) + "    etime: " + str(self.etime) + "    dtime: " + str(self.dtime) + \
+                           "\ndtime_type: " + str(self.dtime_type) + "    dtimedelta: " + str(self.dtimedelta) + \
+                           "\nlevels: " + str(self.levels) + "\n"
+
+                else:
+                    #gtime存在，levels，gdt不存在
+                    str1 = "nlon: " + str(self.nlon) + "    nlat: " + str(self.nlat) + \
+                           "\nslon: " + str(self.slon) + "    dlon: " + str(self.dlon) + "    elon: " + str(self.elon) + \
+                           "\nslat: " + str(self.slat) + "    dlat: " + str(self.dlat) + "    elat: " + str(self.elat) + \
+                           "\nstime: " + str(self.stime) + "    etime: " + str(self.etime) + "    dtime: " + str(self.dtime) + \
+                           "\ndtime_type: " + str(self.dtime_type) + "    dtimedelta: " + str(self.dtimedelta) + "\n"
+        else:
+
+            if (self.gdt != None):
+                if (self.levels != None):
+                    # gtime不存在，levels,gdt存在
+                    str1 = "nlon: " + str(self.nlon) + "    nlat: " + str(self.nlat) + \
+                           "\nslon: " + str(self.slon) + "    dlon: " + str(self.dlon) + "    elon: " + str(self.elon) + \
+                           "\nslat: " + str(self.slat) + "    dlat: " + str(self.dlat) + "    elat: " + str(self.elat) + \
+                           "\nsdt: " + str(self.sdt) + "    edt: " + str(self.edt) + "    ddt: " + str(self.ddt) + \
+                           "\ngdtime_type: " + str(self.gdtime_type) + "    sdtimedelta: " + str(self.sdtimedelta) + "    edtimedelta: " + str(self.edtimedelta) + "    ddtimedelta: " + str(self.ddtimedelta) + \
+                           "\nlevels: " + str(self.levels) + "\n"
+                else:
+                    #gtime,levels不存在,gdt存在
+                    str1 = "nlon: " + str(self.nlon) + "    nlat: " + str(self.nlat) + \
+                           "\nslon: " + str(self.slon) + "    dlon: " + str(self.dlon) + "    elon: " + str(self.elon) + \
+                           "\nslat: " + str(self.slat) + "    dlat: " + str(self.dlat) + "    elat: " + str(self.elat) + \
+                           "\nsdt: " + str(self.sdt) + "    edt: " + str(self.edt) + "    ddt: " + str(self.ddt) + \
+                           "\ngdtime_type: " + str(self.gdtime_type) + "    sdtimedelta: " + str(self.sdtimedelta) + "    edtimedelta: " + str(self.edtimedelta) + "    ddtimedelta: " + str(self.ddtimedelta) + "\n"
+            else:
+                #gtime,gdt不存在,levels存在
+                if (self.levels != None):
+                    str1 = "nlon: " + str(self.nlon) + "    nlat: " + str(self.nlat) + \
+                           "\nslon: " + str(self.slon) + "    dlon: " + str(self.dlon) + "    elon: " + str(self.elon) + \
+                           "\nslat: " + str(self.slat) + "    dlat: " + str(self.dlat) + "    elat: " + str(self.elat) + \
+                           "\nlevels: " + str(self.levels) + "\n"
+                else:
+                    #gtime,gdt,levels都不存在
+                    str1 = "nlon: " + str(self.nlon) + "    nlat: " + str(self.nlat) + \
+                           "\nslon: " + str(self.slon) + "    dlon: " + str(self.dlon) + "    elon: " + str(self.elon) + \
+                           "\nslat: " + str(self.slat) + "    dlat: " + str(self.dlat) + "    elat: " + str(self.elat) + "\n"
+        return str1
+
+    def copy(self):
+        return deepcopy(self)
+
+    #reset的作用是把网格的坐标间隔统一为正数。
+    def reset(self):
+        if (self.dlon > 0 and self.dlat > 0):
+            pass
+        if (self.dlat < 0):
+            tran = self.slat
+            self.slat = self.elat
+            self.elat = tran
+            self.dlat = abs(self.dlat)
+        if (self.dlon < 0):
+            tran = self.slon
+            self.slon = self.elon
+            self.elon = tran
+            self.dlon = abs(self.dlon)
+        return
