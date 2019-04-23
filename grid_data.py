@@ -12,15 +12,11 @@ def grid_data(grid):
     slat = grid.slat
     elat = grid.elat
     dlat = grid.dlat
-    levels = grid.levels
-    gtime = grid.gtime
-    member_count = grid.member_count
+    nmember_count = grid.member_count
     stime = grid.stime
     etime = grid.etime
     dtimes = grid.dtimes
-    dtime_type = grid.dtime_type
     dtimedelta = grid.dtimedelta
-    gdt = grid.gdt
     sdt = grid.sdt
     edt = grid.edt
     ddt = grid.ddt
@@ -28,12 +24,20 @@ def grid_data(grid):
     sdtimedelta = grid.sdtimedelta
     edtimedelta = grid.edtimedelta
     ddtimedelta = grid.ddtimedelta
+    gdt = grid.gdt
+    ngdt = len(gdt)
     nlon = grid.nlon
     nlat = grid.nlat
+    levels = grid.levels
+    nlevels = len(levels)
+    gtime = grid.gtime
+    ntime = len(gtime)
+    dtime_type = grid.dtime_type
+    ndtime_type = len(dtime_type)
     lon = np.arange(nlon) * dlon + slon
     lat = np.arange(nlat) * dlat + slat
-    dat = (np.array(levels,gtime,dtime_type,member_count,lon,lat)).astype(float)
-    return (xr.DataArray(dat, coords={'levels': levels,'times': gtime,'dhs':dtime_type,'member': member_count,
+    data = np.zeros((nmember_count, nlevels, ntime, ngdt, nlat, nlon))
+    return (xr.DataArray(data, coords={'levels': levels,'times': gtime,'dhs':gdt,'member': nmember_count,
                                'lat': lat, 'lon': lon},
-                         dims=['level', 'time', 'dhs', 'member', 'lat', 'lon']))
+                         dims=['member','times', 'dhs', 'levels','lat', 'lon']))
 
