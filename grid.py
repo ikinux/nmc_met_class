@@ -13,7 +13,7 @@ import pandas as pd
 '''
 
 class grid:
-    def __init__(self,glon, glat, gtime=None, gdt=None,gdtime_type=None,levels=None,member_count = 1):
+    def __init__(self,glon, glat, gtime=None, gdt=None,gdtime_type=None,levels=None,nmember = 1):
         'slon,elon,dlon,slat,elat,dlat,stime,dtime,sdt,edt,ddt,dtime_type,levels'
         self.slon = glon[0]
         self.elon = glon[1]
@@ -59,9 +59,6 @@ class grid:
             elif dtime_type == 'm':
                 self.dtime_type ="minute"
                 self.dtimedelta = datetime.timedelta(minutes=int(self.dtimes))
-            #通过开始日期，结束日期以及时间间隔来计算times时间序列和ntime序列个数
-            self.times = pd.date_range(self.stime, self.etime, freq=gtime[2])
-            self.ntime = len(self.times)
         self.gdt = gdt
         if (self.gdt !=None):
             num2 = []
@@ -90,14 +87,8 @@ class grid:
                     self.edtimedelta = datetime.timedelta(minutes=num2[1])
                     self.ddtimedelta = datetime.timedelta(minutes=num2[2])
                 self.gdtime_type = gdtime_type
-                # 根据timedelta的格式，算出ngdt次数和gdts时效列表
-                self.ngdt = int((self.edtimedelta - self.sdtimedelta)/self.ddtimedelta)
-                gdt_list = []
-                for i in range(self.ngdt+1):
-                    gdt_list.append(self.sdtimedelta + self.ddtimedelta * i)
-                self.gdts = gdt_list
         self.levels = levels
-        self.member_count = member_count
+        self.nmember = nmember
         nlon = 1 + (self.elon - self.slon) / self.dlon
         error = abs(round(nlon) - nlon)
         if (error > 0.01):
