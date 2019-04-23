@@ -21,7 +21,7 @@ def grid_data(grid):
     # 通过开始日期，结束日期以及时间间隔来计算times时间序列和ntime序列个数
     times = pd.date_range(stime, etime, freq=gtime[2])
     ntime = len(times)
-    # 根据timedelta的格式，算出ngdt次数和gdts时效列表
+    # 根据timedelta的格式，算出ndt次数和gds时效列表
     edtimedelta = grid.edtimedelta
     sdtimedelta = grid.sdtimedelta
     ddtimedelta = grid.ddtimedelta
@@ -29,13 +29,13 @@ def grid_data(grid):
     gdt_list = []
     for i in range(ndt + 1):
         gdt_list.append(sdtimedelta + ddtimedelta * i)
-    gdts = gdt_list
+    dts = gdt_list
     #取出nmember数和levels层数
     nmember = grid.nmember
     levels = grid.levels
     nlevels = len(levels)
     data = np.zeros((nmember, nlevels, ntime, ndt, nlat, nlon))
-    return (xr.DataArray(data, coords={'levels': levels,'times': times,'dhs':gdts,'member': nmember,
+    return (xr.DataArray(data, coords={'nmember': np.arrange(nmember),'levels': levels,'times': times,'dt':dts,
                                'lat': lat, 'lon': lon},
-                         dims=['member','times', 'dhs', 'levels','lat', 'lon']))
+                         dims=['member', 'levels','times', 'dt','lat', 'lon']))
 
