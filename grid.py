@@ -1,17 +1,19 @@
 #!/usr/bin/python3.6
 # -*- coding:UTF-8 -*-
 import math
-from datetime import datetime,timedelta
+from datetime import datetime
+from datetime import timedelta
 import re
 from copy import deepcopy
 import time
+import pandas as pd
 '''
 约定坐标顺序为: member, times,dhs, level, lat,lon
-添加一个grid类来存储网格的范围包括（起始经纬度、格距、起止时间，时间间隔，起止时效，时效间隔，层次列表）
+添加一个grid类来存储网格的范围包括（起始经纬度、格距、起止时间，时间间隔，起止时效，时效间隔，层次列表，数据成员）
 '''
 
 class grid:
-    def __init__(self,glon, glat, gtime=None, gdt=None,gdtime_type=None,levels=None):
+    def __init__(self,glon, glat, gtime=None, gdt=None,gdtime_type=None,levels=None,member_count = 1):
         'slon,elon,dlon,slat,elat,dlat,stime,dtime,sdt,edt,ddt,dtime_type,levels'
         self.slon = glon[0]
         self.elon = glon[1]
@@ -57,6 +59,9 @@ class grid:
             elif dtime_type == 'm':
                 self.dtime_type ="minute"
                 self.dtimedelta = datetime.timedelta(minutes=int(self.dtimes))
+            #通过开始日期，结束日期以及时间间隔来计算times时间序列和ntime序列个数
+            self.times = pd.date_range(self.stime, self.etime, freq=gtime[2])
+            self.ntime = len(self.times)
         self.gdt = gdt
         if (self.gdt !=None):
             num2 = []
@@ -85,7 +90,14 @@ class grid:
                     self.edtimedelta = datetime.timedelta(minutes=num2[1])
                     self.ddtimedelta = datetime.timedelta(minutes=num2[2])
                 self.gdtime_type = gdtime_type
+                # 根据timedelta的格式，算出ngdt次数和gdts时效列表
+                self.ngdt = int((self.edtimedelta - self.sdtimedelta)/self.ddtimedelta)
+                gdt_list = []
+                for i in range(self.ngdt+1):
+                    gdt_list.append(self.sdtimedelta + self.ddtimedelta * i)
+                self.gdts = gdt_list
         self.levels = levels
+        self.member_count = member_count
         nlon = 1 + (self.elon - self.slon) / self.dlon
         error = abs(round(nlon) - nlon)
         if (error > 0.01):
@@ -114,7 +126,8 @@ class grid:
                            "\ndtime_type: " + str(self.dtime_type) + "    dtimedelta: " + str(self.dtimedelta) + \
                            "\nsdt: " + str(self.sdt) + "    edt: " + str(self.edt) + "    ddt: " + str(self.ddt) + \
                            "\ngdtime_type: " + str(self.gdtime_type) + "    sdtimedelta: " + str(self.sdtimedelta) + "    edtimedelta: " + str(self.edtimedelta) + "    ddtimedelta: " + str(self.ddtimedelta) + \
-                           "\nlevels: " + str(self.levels) + "\n"
+                           "\nlevels: " + str(self.levels) + \
+                           "\nmember_count: " + str(self.member_count) + "\n"
                 else:
                     #gtime,gdt存在,levels不存在
                     str1 = "nlon: " + str(self.nlon) + "    nlat: " + str(self.nlat) + \
@@ -123,7 +136,8 @@ class grid:
                            "\nstime: " + str(self.stime) + "    etime: " + str(self.etime) + "    dtime: " + str(self.dtime) + \
                            "\ndtime_type: " + str(self.dtime_type) + "    dtimedelta: " + str(self.dtimedelta) + \
                            "\nsdt: " + str(self.sdt) + "    edt: " + str(self.edt) + "    ddt: " + str(self.ddt) + \
-                           "\ngdtime_type: " + str(self.gdtime_type) + "    sdtimedelta: " + str(self.sdtimedelta) + "    edtimedelta: " + str(self.edtimedelta) + "    ddtimedelta: " + str(self.ddtimedelta) + "\n"
+                           "\ngdtime_type: " + str(self.gdtime_type) + "    sdtimedelta: " + str(self.sdtimedelta) + "    edtimedelta: " + str(self.edtimedelta) + "    ddtimedelta: " + str(self.ddtimedelta) + \
+                           "\nmember_count: " + str(self.member_count) + "\n"
             else:
                 if (self.levels != None):
                     # gtime，levels存在，gdt不存在
@@ -132,7 +146,8 @@ class grid:
                            "\nslat: " + str(self.slat) + "    dlat: " + str(self.dlat) + "    elat: " + str(self.elat) + \
                            "\nstime: " + str(self.stime) + "    etime: " + str(self.etime) + "    dtime: " + str(self.dtime) + \
                            "\ndtime_type: " + str(self.dtime_type) + "    dtimedelta: " + str(self.dtimedelta) + \
-                           "\nlevels: " + str(self.levels) + "\n"
+                           "\nlevels: " + str(self.levels) + \
+                           "\nmember_count: " + str(self.member_count) + "\n"
 
                 else:
                     #gtime存在，levels，gdt不存在
@@ -140,7 +155,8 @@ class grid:
                            "\nslon: " + str(self.slon) + "    dlon: " + str(self.dlon) + "    elon: " + str(self.elon) + \
                            "\nslat: " + str(self.slat) + "    dlat: " + str(self.dlat) + "    elat: " + str(self.elat) + \
                            "\nstime: " + str(self.stime) + "    etime: " + str(self.etime) + "    dtime: " + str(self.dtime) + \
-                           "\ndtime_type: " + str(self.dtime_type) + "    dtimedelta: " + str(self.dtimedelta) + "\n"
+                           "\ndtime_type: " + str(self.dtime_type) + "    dtimedelta: " + str(self.dtimedelta) + \
+                           "\nmember_count: " + str(self.member_count) + "\n"
         else:
 
             if (self.gdt != None):
@@ -151,26 +167,30 @@ class grid:
                            "\nslat: " + str(self.slat) + "    dlat: " + str(self.dlat) + "    elat: " + str(self.elat) + \
                            "\nsdt: " + str(self.sdt) + "    edt: " + str(self.edt) + "    ddt: " + str(self.ddt) + \
                            "\ngdtime_type: " + str(self.gdtime_type) + "    sdtimedelta: " + str(self.sdtimedelta) + "    edtimedelta: " + str(self.edtimedelta) + "    ddtimedelta: " + str(self.ddtimedelta) + \
-                           "\nlevels: " + str(self.levels) + "\n"
+                           "\nlevels: " + str(self.levels) + \
+                           "\nmember_count: " + str(self.member_count) + "\n"
                 else:
                     #gtime,levels不存在,gdt存在
                     str1 = "nlon: " + str(self.nlon) + "    nlat: " + str(self.nlat) + \
                            "\nslon: " + str(self.slon) + "    dlon: " + str(self.dlon) + "    elon: " + str(self.elon) + \
                            "\nslat: " + str(self.slat) + "    dlat: " + str(self.dlat) + "    elat: " + str(self.elat) + \
                            "\nsdt: " + str(self.sdt) + "    edt: " + str(self.edt) + "    ddt: " + str(self.ddt) + \
-                           "\ngdtime_type: " + str(self.gdtime_type) + "    sdtimedelta: " + str(self.sdtimedelta) + "    edtimedelta: " + str(self.edtimedelta) + "    ddtimedelta: " + str(self.ddtimedelta) + "\n"
+                           "\ngdtime_type: " + str(self.gdtime_type) + "    sdtimedelta: " + str(self.sdtimedelta) + "    edtimedelta: " + str(self.edtimedelta) + "    ddtimedelta: " + str(self.ddtimedelta) + \
+                           "\nmember_count: " + str(self.member_count) + "\n"
             else:
                 #gtime,gdt不存在,levels存在
                 if (self.levels != None):
                     str1 = "nlon: " + str(self.nlon) + "    nlat: " + str(self.nlat) + \
                            "\nslon: " + str(self.slon) + "    dlon: " + str(self.dlon) + "    elon: " + str(self.elon) + \
                            "\nslat: " + str(self.slat) + "    dlat: " + str(self.dlat) + "    elat: " + str(self.elat) + \
-                           "\nlevels: " + str(self.levels) + "\n"
+                           "\nlevels: " + str(self.levels) + \
+                           "\nmember_count: " + str(self.member_count) + "\n"
                 else:
                     #gtime,gdt,levels都不存在
                     str1 = "nlon: " + str(self.nlon) + "    nlat: " + str(self.nlat) + \
                            "\nslon: " + str(self.slon) + "    dlon: " + str(self.dlon) + "    elon: " + str(self.elon) + \
-                           "\nslat: " + str(self.slat) + "    dlat: " + str(self.dlat) + "    elat: " + str(self.elat) + "\n"
+                           "\nslat: " + str(self.slat) + "    dlat: " + str(self.dlat) + "    elat: " + str(self.elat) + \
+                           "\nmember_count: " + str(self.member_count) + "\n"
         return str1
 
     def copy(self):
