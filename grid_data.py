@@ -90,26 +90,37 @@ def get_grid_of_data(xr01):
             print("存在time")
             if len_ntime > 1:
                 stime1 = str(xf.index.get_level_values(2)[0])
+                stime11 = ''.join([x for x in stime1 if x.isdigit()])
                 stime2 = str(xf.index.get_level_values(2)[1])
+                stime22 = ''.join([x for x in stime2 if x.isdigit()])
                 etime1 = str(xf.index.get_level_values(2)[-1])
-                stime3 = datetime.datetime.strptime(stime2, "%Y-%m-%d:%H:%M:%S")
-                stime = datetime.datetime.strptime(stime1, "%Y-%m-%d:%H:%M:%S")
+                etime11 = ''.join([x for x in etime1 if x.isdigit()])
+
+                stime3 = datetime.datetime.strptime(stime22, "%Y-%m-%d:%H:%M:%S")
+                stime = datetime.datetime.strptime(stime11, "%Y-%m-%d:%H:%M:%S")
                 dtime = stime3 - stime
-                etime = datetime.datetime.strptime(etime1, "%Y-%m-%d:%H:%M:%S")
+                etime = datetime.datetime.strptime(etime11, "%Y-%m-%d:%H:%M:%S")
                 gtime = [stime, etime, dtime]
             else:
                 gtime = None
         if xr01.coords.dims[i] == 'dt':
             print("存在dt")
             if len_ndt > 1:
+                #将gdt时间格式改为"m"分钟的形式。
                 sdt1 = str(xf.index.get_level_values(3)[0])
                 sdt2 = str(xf.index.get_level_values(3)[1])
                 edt = str(xf.index.get_level_values(3)[-1])
-                # 时效间隔(暂定格式)
-                # self.dtimes = re.findall(r"\d+", edt)[0]
-                # dtime_type = re.findall(r"\D+", edt)[0]
-                ddt = sdt2 - sdt1
-                gdt = [sdt1, edt, ddt]
+                time1 = [sdt1,sdt2,edt]
+                for i in range(3):
+                    day1 = re.findall(r"\D+", time1[i])
+                    day2 = re.findall(r"\d+", time1[i])
+                    if day1[0].startswith(' days'):
+                        time_list = re.findall(r"\d+", time1[i])
+                        minute = int(time_list[0]) * 60 * 24 + int(time_list[1]) * 60 + int(time_list[2])
+                        gdt.append(str(minute) + 'm')
+                    else:
+                        minute01 = int(day2[0]) * 60 + int(day2[1])
+                        gdt.append(str(minute01) + 'm')
             else:
                 gdt = None
         if xr01.coords.dims[i] == 'lat':
