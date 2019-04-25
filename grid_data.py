@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import datetime
 import lch.test_data_struct.data_structure as ts
+import re
 
 #返回一个DataArray，其维度信息和grid描述一致，数组里面的值为0.
 def grid_data(grid):
@@ -52,9 +53,9 @@ def grid_data(grid):
     #取出nmember数和levels层数
     nmember = grid.nmember
     data = np.zeros((nmember, nlevels, ntime, ndt, nlat, nlon))
-    return (xr.DataArray(data, coords={'nmember': np.arange(nmember),'levels': levels,'times': times,'dt':dts,
+    return (xr.DataArray(data, coords={'member': np.arange(nmember),'level': levels,'time': times,'dt':dts,
                                'lat': lat, 'lon': lon},
-                         dims=['nmember', 'levels','times', 'dt','lat', 'lon']))
+                         dims=['member', 'level','time', 'dt','lat', 'lon']))
 
 # 根据grid_data 生成 grid的函数,输入一个 DataArray，返回一个grid类数据
 def get_grid_of_data(xr01):
@@ -63,34 +64,31 @@ def get_grid_of_data(xr01):
     gtime = []
     gdt = []
     levels = []
-    nmembers = []
-    nmember = len(xr01.coords.variables.get(xr01.coords.dims[0]))
-    nlevel = len(xr01.coords.variables.get(xr01.coords.dims[1]))
-    ntime = len(xr01.coords.variables.get(xr01.coords.dims[2]))
-    ndt = len(xr01.coords.variables.get(xr01.coords.dims[3]))
-    nlat = len(xr01.coords.variables.get(xr01.coords.dims[4]))
-    nlon = len(xr01.coords.variables.get(xr01.coords.dims[5]))
+    nmember = 1
+    len_nmember = len(xr01.coords.variables.get(xr01.coords.dims[0]))
+    len_nlevel = len(xr01.coords.variables.get(xr01.coords.dims[1]))
+    len_ntime = len(xr01.coords.variables.get(xr01.coords.dims[2]))
+    len_ndt = len(xr01.coords.variables.get(xr01.coords.dims[3]))
+    len_nlat = len(xr01.coords.variables.get(xr01.coords.dims[4]))
+    len_nlon = len(xr01.coords.variables.get(xr01.coords.dims[5]))
     xf = xr01.to_dataframe(name="")
-    count_num = int(nmember*nlevel*ntime*ndt*nlat*nlon)
+    count_num = int(len_nmember*len_nlevel*len_ntime*len_ndt*len_nlat*len_nlon)
     for i in range(len(xr01.coords)):
-        if xr01.coords.dims[i] == 'nmember':
-            print("存在nmember")
+        if xr01.coords.dims[i] == 'member':
+            print("存在member")
             print(len(xr01.coords.variables.get(xr01.coords.dims[i])))  # 获取nmember维度个数
-            for j in range(nmember):
-                num = count_num / nmember
-                nmember = int(xf.index.get_level_values(0)[j*num])
-                nmembers.append(nmember)
-        if xr01.coords.dims[i] == 'levels':
-            print("存在levels")
-            print(len(xr01.coords.variables.get('levels')))  # 获取levels维度个数
-            levels = xr01.coords.variables.get('levels')
-            for j in range(nmember):
-                num = count_num / nlevel
+            nmember = int(len_nmember)
+        if xr01.coords.dims[i] == 'level':
+            print("存在level")
+            print(len(xr01.coords.variables.get('level')))  # 获取levels维度个数
+            levels = xr01.coords.variables.get('level')
+            for j in range(len_nlevel):
+                num = count_num / len_nlevel
                 nlevel = int(xf.index.get_level_values(0)[j*num])
                 levels.append(nlevel)
-        if xr01.coords.dims[i] == 'times':
-            print("存在times")
-            if ntime > 1:
+        if xr01.coords.dims[i] == 'time':
+            print("存在time")
+            if len_ntime > 1:
                 stime1 = str(xf.index.get_level_values(2)[0])
                 stime2 = str(xf.index.get_level_values(2)[1])
                 etime1 = str(xf.index.get_level_values(2)[-1])
@@ -103,11 +101,13 @@ def get_grid_of_data(xr01):
                 gtime = None
         if xr01.coords.dims[i] == 'dt':
             print("存在dt")
-            if ndt > 1:
+            if len_ndt > 1:
                 sdt1 = str(xf.index.get_level_values(3)[0])
                 sdt2 = str(xf.index.get_level_values(3)[1])
                 edt = str(xf.index.get_level_values(3)[-1])
                 # 时效间隔(暂定格式)
+                # self.dtimes = re.findall(r"\d+", edt)[0]
+                # dtime_type = re.findall(r"\D+", edt)[0]
                 ddt = sdt2 - sdt1
                 gdt = [sdt1, edt, ddt]
             else:
@@ -128,6 +128,6 @@ def get_grid_of_data(xr01):
             # lon格距
             dlon = slon2 - slon
             glon = [slon, elon, dlon]
-    grid1 = ts.grid(glon, glat, gtime, gdt,levels,nmember)
-    return grid1
+    grid01 = ts.grid(glon, glat, gtime, gdt,levels,nmember)
+    return grid01
 
