@@ -51,14 +51,18 @@ def read_from_micaps4(filename,grid=None):
         month = int(strs[4])
         day = int(strs[5])
         hour = int(strs[6])
+        dts = str(strs[7])
         levels = float(strs[8])
         y = str(datetime.datetime.now().year)
         year2 = int(y[2:])
         #由于m4只提供年份的后两位，因此，做了个暂时的换算范围在1920-2019年的范围可以匹配成功
-        if year2 - year1 > 0:
-            year3 = '20' + str(year1)
+        if len(str(year1)) ==4:
+            year3 = year1
         else:
-            year3 = '19' + str(year1)
+            if year2 - year1 >= 0:
+                year3 = '20' + str(year1)
+            else:
+                year3 = '19' + str(year1)
         ymd = year3 + str(month) + str(day) + str(hour) + '0000'
         dlon = float(strs[9])
         dlat = float(strs[10])
@@ -69,65 +73,19 @@ def read_from_micaps4(filename,grid=None):
         slon1, dlon1, elon1, slat1, dlat1, elat1, nlon1, nlat1 = grid_ragular(slon,dlon,elon,slat,dlat,elat)
         if len(strs) - 22 >= nlon1 * nlat1 :
             #用户没有输入参数信息的时候，使用m4文件自带的信息
+            k = 22
+            dat = (np.array(strs[k:])).astype(float).reshape((1, 1, 1, 1, nlat1, nlon1))
+            lon = np.arange(nlon1) * dlon1 + slon1
+            lat = np.arange(nlat1) * dlat1 + slat1
+            times = pd.date_range(ymd, periods=1)
+            da = xr.DataArray(dat, coords={'member': [1], 'level': levels, 'time': times, 'dt': dts,
+                                           'lat': lat, 'lon': lon},
+                              dims=['member', 'level', 'time', 'dt', 'lat', 'lon'])
             if grid is None:
-                k = 22
-                dat = (np.array(strs[k:])).astype(float).reshape((1,1,1,1,nlat1,nlon1))
-                lon = np.arange(nlon1) * dlon1 + slon1
-                lat = np.arange(nlat1) * dlat1 + slat1
-                times = pd.date_range(ymd, periods=1)
-                da = xr.DataArray(dat, coords={'member':[1], 'level': levels, 'time': times, 'dt': hour,
-                                               'lat': lat, 'lon': lon},
-                                  dims=['member', 'level', 'time', 'dt', 'lat', 'lon'])
                 return da
             else:
-                k=22
-                slon = grid.slon
-                dlon = grid.dlon
-                slat = grid.slat
-                dlat = grid.dlat
-                nlon = grid.nlon
-                nlat = grid.nlat
-                # 通过起始经纬度和格距计算经纬度格点数
-                lon = np.arange(nlon) * dlon + slon
-                lat = np.arange(nlat) * dlat + slat
-                gtime = grid.gtime
-                if (gtime != None):
-                    stime = grid.stime
-                    etime = grid.etime
-                    gtime = grid.gtime
-                    # 通过开始日期，结束日期以及时间间隔来计算times时间序列和ntime序列个数
-                    times = pd.date_range(stime, etime, freq=gtime[2])
-                    ntime = len(times)
-                else:
-                    times = 9999
-                    ntime = 1
-                gdt = grid.gdt
-                if (gdt != None):
-                    # 根据timedelta的格式，算出ndt次数和gds时效列表
-                    edtimedelta = grid.edtimedelta
-                    sdtimedelta = grid.sdtimedelta
-                    ddtimedelta = grid.ddtimedelta
-                    ndt = int((edtimedelta - sdtimedelta) / ddtimedelta)
-                    gdt_list = []
-                    for i in range(ndt + 1):
-                        gdt_list.append(sdtimedelta + ddtimedelta * i)
-                    dts = gdt_list
-                else:
-                    ndt = 1
-                    dts = 9999
-                levels = grid.levels
-                if (levels != None):
-                    levels = grid.levels
-                    nlevels = len(levels)
-                else:
-                    nlevels = 1
-                # 取出nmember数和levels层数
-                nmember = grid.nmember
-                dat = (np.array(strs[k:])).astype(float).reshape((nmember, nlevels, ntime, ndt, nlat1, nlon1))
-                da = xr.DataArray(dat, coords={'member': np.arange(nmember), 'level': levels, 'time': times, 'dt': dts,
-                                               'lat': lat, 'lon': lon},
-                                 dims=['member', 'level', 'time', 'dt', 'lat', 'lon'])
-                return da
+                da1 = ts.interpolation.linear_xy(da, grid)
+                return da1
         else:
             return None
     except:
