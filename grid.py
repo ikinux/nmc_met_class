@@ -72,21 +72,20 @@ class grid:
                 #提取出dtime_type类型
                 TIME_type = re.findall(r"\D+", gdt[2])[0]
                 if TIME_type == 'h':
-                    gdtime_type = "hour"
+                    self.gdtime_type = "hour"
                     self.sdtimedelta = datetime.timedelta(hours=num2[0])
                     self.edtimedelta = datetime.timedelta(hours=num2[1])
                     self.ddtimedelta = datetime.timedelta(hours=num2[2])
                 elif TIME_type == 'd':
-                    gdtime_type = "day"
+                    self.gdtime_type = "day"
                     self.sdtimedelta = datetime.timedelta(days=num2[0])
                     self.edtimedelta = datetime.timedelta(days=num2[1])
                     self.ddtimedelta = datetime.timedelta(days=num2[2])
                 elif TIME_type == 'm':
-                    gdtime_type = "minute"
+                    self.gdtime_type = "minute"
                     self.sdtimedelta = datetime.timedelta(minutes=num2[0])
                     self.edtimedelta = datetime.timedelta(minutes=num2[1])
                     self.ddtimedelta = datetime.timedelta(minutes=num2[2])
-                self.gdtime_type = gdtime_type
         self.levels = levels
         self.nmember = nmember
         nlon = 1 + (self.elon - self.slon) / self.dlon
