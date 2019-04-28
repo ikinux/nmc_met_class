@@ -20,40 +20,30 @@ from scipy import interpolate
 reserve_other_dim = false时，你想想返回的结果是什么样的
 '''
 def linear_xy(da0, grid, reserve_other_dim=False):
-    # 使用grid的信息
-    dat = da0.values
+    dat0 = da0.values
+    dat = np.squeeze(dat0)
     df = da0.to_dataframe(name="")
-    gf = grid.to_dataframe(name="")
-    # 分别获取纬度信息
-    dslat = float(df.index.get_level_values(4)[0])
-    dslat2 = float(df.index.get_level_values(4)[1])
-    delat = float(df.index.get_level_values(4)[-1])
-    ddlat = dslat2 - dslat
-    dnlat = (delat - dslat) / ddlat + 1
-    gslat = float(gf.index.get_level_values(4)[0])
-    gslat2 = float(gf.index.get_level_values(4)[1])
-    gelat = float(gf.index.get_level_values(4)[-1])
-    gdlat = gslat2 - gslat
-    gnlat = (gelat - gslat) / gdlat + 1
-    # 分别获取经度信息
+    gslon = grid.slon
+    gdlon = grid.dlon
+    gslat = grid.slat
+    gdlat = grid.dlat
+    gelon = grid.elon
+    gelat = grid.elat
+    gnlon = grid.nlon
+    gnlat = grid.nlat
+    # 通过起始经纬度和格距计算经纬度格点数
+    lon = np.arange(gnlon) * gdlon + gslon
+    lat = np.arange(gnlat) * gdlat + gslat
     dslon = float(df.index.get_level_values(5)[0])
-    dslon2 = float(df.index.get_level_values(5)[1])
     delon = float(df.index.get_level_values(5)[-1])
-    dlon = dslon2 - dslon
-    dnlon = (delon - dslon) / dlon + 1
-    gslon = float(gf.index.get_level_values(5)[0])
-    gslon2 = float(gf.index.get_level_values(5)[1])
-    gelon = float(gf.index.get_level_values(5)[-1])
-    gdlon = gslon2 - gslon
-    gnlon = (gelon - gslon) / dlon + 1
     # 先按照纬度拆分,获取到插值网格对应的点
     nlon_num = (gelon - gslon) / gdlon + 1
     new_start_lat = gslat * nlon_num
     new_end_lat = (gelat + 1) * nlon_num - 1
     data = dat[new_start_lat:new_end_lat]
     # 纬度拆分完毕，对经度进行拆分,算出插值前的原始数据
-    data1 = data.reshape(nlon_num, gelat - gslat)
-    data2 = data1[gslon - dslon:delon - gelon + 1:1, :]
+    data1 = data.reshape(gelat - gslat,nlon_num)
+    data2 = data1[:,gslon - dslon:delon - gelon + 1:1]
     # 进行二维线性插值
     tox = np.linspace(0, data2.shape[0] - 1, data2.shape[0])
     toy = np.linspace(0, data2.shape[1] - 1, data2.shape[1])
@@ -64,24 +54,57 @@ def linear_xy(da0, grid, reserve_other_dim=False):
     nglat_num = int((gelat - gslat) / gdlat + 1)
     ynew = np.linspace(0, data2.shape[0] - 1, nglat_num)  # y
     dat = newfunc(xnew, ynew)
-    if reserve_other_dim is None:
-        nmember = grid.index.get_level_values(0)
-        levels = grid.index.get_level_values(1)
-        times = grid.index.get_level_values(2)
-        dts = grid.index.get_level_values(3)
-        lat = grid.index.get_level_values(4)
-        lon = grid.index.get_level_values(5)
-        da = xr.DataArray(dat, coords={'member': nmember, 'level': levels, 'time': times, 'dt': dts,
+    #使用grid的信息
+    if reserve_other_dim is False:
+        gtime = grid.gtime
+        if (gtime != None):
+            stime = grid.stime
+            etime = grid.etime
+            gtime = grid.gtime
+            # 通过开始日期，结束日期以及时间间隔来计算times时间序列和ntime序列个数
+            times = pd.date_range(stime, etime, freq=gtime[2])
+            ntime = len(times)
+        else:
+            times = 9999
+            ntime = 1
+        gdt = grid.gdt
+        if (gdt != None):
+            # 根据timedelta的格式，算出ndt次数和gds时效列表
+            edtimedelta = grid.edtimedelta
+            sdtimedelta = grid.sdtimedelta
+            ddtimedelta = grid.ddtimedelta
+            ndt = int((edtimedelta - sdtimedelta) / ddtimedelta)
+            gdt_list = []
+            for i in range(ndt + 1):
+                gdt_list.append(sdtimedelta + ddtimedelta * i)
+            dts = gdt_list
+        else:
+            ndt = 1
+            dts = 9999
+        levels = grid.levels
+        if (levels != None):
+            levels = grid.levels
+            nlevels = len(levels)
+        else:
+            nlevels = 1
+        # 取出nmember数和levels层数
+        nmember = grid.nmember
+        data = dat.reshape(nmember,nlevels,ntime,ndt,dat.shape[0],dat.shape[1])
+        da = xr.DataArray(data, coords={'member': nmember, 'level': levels, 'time': times, 'dt': dts,
                                        'lat': lat, 'lon': lon},
                           dims=['member', 'level', 'time', 'dt', 'lat', 'lon'])
+
     else:
+        nmember = int(len(da0.coords.variables.get(da0.coords.dims[0])))
+        nlevel = int(len(da0.coords.variables.get(da0.coords.dims[1])))
+        ntime = int(len(da0.coords.variables.get(da0.coords.dims[2])))
+        ndt = int(len(da0.coords.variables.get(da0.coords.dims[3])))
+        data = dat.reshape(nmember, nlevel, ntime, ndt, dat.shape[0], dat.shape[1])
         nmember = dat.index.get_level_values(0)
         levels = dat.index.get_level_values(1)
         times = dat.index.get_level_values(2)
         dts = dat.index.get_level_values(3)
-        lat = dat.index.get_level_values(4)
-        lon = dat.index.get_level_values(5)
-        da = xr.DataArray(dat, coords={'member': nmember, 'level': levels, 'time': times, 'dt': dts,
+        da = xr.DataArray(data, coords={'member': nmember, 'level': levels, 'time': times, 'dt': dts,
                                        'lat': lat, 'lon': lon},
                           dims=['member', 'level', 'time', 'dt', 'lat', 'lon'])
     return da
