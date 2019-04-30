@@ -1,4 +1,4 @@
-#!/usr/bin/python3.5
+#!/usr/bin/python3.6
 # -*- coding:UTF-8 -*-
 import numpy as np
 import os
@@ -8,7 +8,10 @@ import struct
 import math
 import xarray as xr
 import pandas as pd
+import datetime
+import lch.test_data_struct.data_structure as ts
 
+#规范化格点（起始经纬度，间隔经度，格点数）
 def grid_ragular(slon,dlon,elon,slat,dlat,elat):
     slon1 = slon
     dlon1 = dlon
@@ -16,23 +19,21 @@ def grid_ragular(slon,dlon,elon,slat,dlat,elat):
     slat1 = slat
     dlat1 = dlat
     elat1 = elat
-    nlon = 1 + (elon - slon) / dlon
+    nlon = 1 + (elon1 - slon1) / dlon1
     error = abs(round(nlon) - nlon)
     if (error > 0.01):
         nlon1 = math.ceil(nlon)
     else:
         nlon1 = int(round(nlon))
-    elon1 = slon1 + (nlon - 1) * dlon
     nlat = 1 + (elat - slat) / dlat
     error = abs(round(nlat) - nlat)
     if (error > 0.01):
         nlat1 = math.ceil(nlat)
     else:
         nlat1 = int(round(nlat))
-    elat1 = slat1 + (nlat - 1) * dlat
     return slon1,dlon1,elon1,slat1,dlat1,elat1,nlon1,nlat1
 
-def read_from_micaps4(filename):
+def read_from_micaps4(filename,grid=None):
     try:
         if not os.path.exists(filename):
             print(filename + " is not exist")
@@ -46,27 +47,45 @@ def read_from_micaps4(filename):
             str1 = file.read()
             file.close()
         strs = str1.split()
+        year1 = int(strs[3])
+        month = int(strs[4])
+        day = int(strs[5])
+        hour = int(strs[6])
+        dts = str(strs[7])
+        levels = float(strs[8])
+        y = str(datetime.datetime.now().year)
+        year2 = int(y[2:])
+        #由于m4只提供年份的后两位，因此，做了个暂时的换算范围在1920-2019年的范围可以匹配成功
+        if len(str(year1)) ==4:
+            year3 = year1
+        else:
+            if year2 - year1 >= 0:
+                year3 = '20' + str(year1)
+            else:
+                year3 = '19' + str(year1)
+        ymd = year3 + str(month) + str(day) + str(hour) + '0000'
         dlon = float(strs[9])
         dlat = float(strs[10])
         slon = float(strs[11])
         elon = float(strs[12])
         slat = float(strs[13])
         elat = float(strs[14])
-        nlon = int(strs[15])
-        nlat = int(strs[16])
-        elon = slon + dlon * (nlon -1)
-        elat = slat + dlat * (nlat -1)
         slon1, dlon1, elon1, slat1, dlat1, elat1, nlon1, nlat1 = grid_ragular(slon,dlon,elon,slat,dlat,elat)
         if len(strs) - 22 >= nlon1 * nlat1 :
-            k=22
-            dat = (np.array(strs[k:])).astype(float).reshape((1,1,1,nlat1,nlon1))
+            #用户没有输入参数信息的时候，使用m4文件自带的信息
+            k = 22
+            dat = (np.array(strs[k:])).astype(float).reshape((1, 1, 1, 1, nlat1, nlon1))
             lon = np.arange(nlon1) * dlon1 + slon1
             lat = np.arange(nlat1) * dlat1 + slat1
-            times = pd.date_range('2000-01-01', periods=1)
-            da = xr.DataArray(dat,coords = {'member':[0],'time':times,'level':[0],
-                                             'latitude':lat,'longitude':lon},
-                               dims= ['member','time','level','latitude','longitude'])
-            return da
+            times = pd.date_range(ymd, periods=1)
+            da = xr.DataArray(dat, coords={'member': [1], 'level': levels, 'time': times, 'dt': dts,
+                                           'lat': lat, 'lon': lon},
+                              dims=['member', 'level', 'time', 'dt', 'lat', 'lon'])
+            if grid is None:
+                return da
+            else:
+                da1 = ts.interpolation.linear_xy(da, grid)
+                return da1
         else:
             return None
     except:

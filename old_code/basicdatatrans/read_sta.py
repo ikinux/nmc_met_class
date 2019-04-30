@@ -56,6 +56,7 @@ def read_from_micaps3(filename,station = None):
             sta1.columns = ['lon','lat','data']
             sta1.drop_duplicates(keep='first', inplace=True)
             if (station is None):
+
                 return sta1
             else:
                 sta = ssf.recover(sta1,station)
@@ -63,6 +64,7 @@ def read_from_micaps3(filename,station = None):
         else:
             return None
     except:
+
         return None
 
 def read_from_micaps16(filename):

@@ -4,7 +4,7 @@ import numpy as np
 from copy import deepcopy
 import nmc_met_class.basicdatas as bd
 import os
-import nmc_met_class.basicdatatrans.sta_sta_function as ssf
+import sta_sta_function as ssf
 from collections import OrderedDict
 import struct
 from collections import OrderedDict
@@ -12,14 +12,23 @@ from pandas import DataFrame
 import pandas as pd
 import json
 import urllib3
+from dict import *
+from sta_data import sta_data
 
+#读取micaps1-2-8
 def read_from_micaps1_2_8(filename,column,station = None):
     if os.path.exists(filename):
-        sta1 = pd.read_csv(filename, skiprows=2, sep="\s+", header=None, usecols= [0,1,2,column],index_col=0)
+        sta01 = pd.read_csv(filename, skiprows=2, sep="\s+", header=None, usecols= [0,1,2,column],index_col=0)
         #index_str = np.array(df.index.tolist()).astype("str")
         #df = pd.DataFrame(df.values,index=index_str)
         #sta1 = bd.sta_data(df, column)
-        sta1.columns = ['lon', 'lat', 'data']
+        sta1= pd.DataFrame(sta01)
+        if sta1.shape[1] ==8:
+            print("m2格式数据")
+        elif sta1.shape[1] ==11:
+            print("m4格式数据")
+        sta1 = sta_data(sta01)
+        #sta1.columns = ['lon', 'lat','alt','data']
         if(station is None):
             return sta1
         else:
@@ -28,8 +37,9 @@ def read_from_micaps1_2_8(filename,column,station = None):
     else:
         return None
 
-
-def read_from_micaps3(filename,station = None):
+#读取micaps3
+def read_from_micaps3(filename,station = None,sta=None,time=None,dtime=None,
+                      dtime_type="hour",level= None,level_type="surface"):
     try:
         if os.path.exists(filename):
             file = open(filename,'r')
@@ -53,7 +63,27 @@ def read_from_micaps3(filename,station = None):
             file.close()
 
             sta1 = pd.read_csv(filename, skiprows=skip_num, sep="\s+", header=None, usecols=[0, 1, 2,4], index_col=0)
-            sta1.columns = ['lon','lat','data']
+            # sta1.columns = ['lon','lat','alt','data']
+            if (level is None):
+                level = ['level1']
+            else:
+                level = level
+            if (sta is None):
+                sta = ['sta1']
+            else:
+                sta = sta
+            if (time is None):
+                time = ['time1', 'time2']
+            else:
+                time = time
+
+            if (dtime is None):
+                dtime = ['dtime1', 'dtime2', 'dtime3', 'dtime4']
+            else:
+                dtime = dtime
+            sta1 = DataFrame(sta1,
+                             columns=pd.MultiIndex.from_product([['lon', 'lat', 'alt', 'data'], ]),
+                             index=pd.MultiIndex.from_product([level, sta, time, dtime]))
             sta1.drop_duplicates(keep='first', inplace=True)
             if (station is None):
                 return sta1
@@ -65,10 +95,12 @@ def read_from_micaps3(filename,station = None):
     except:
         return None
 
-def read_from_micaps16(filename):
+#读取micaps16
+def read_from_micaps16(filename,time=None,dtime=None,
+                      dtime_type="hour",level= None,level_type="surface"):
     if os.path.exists(filename):
         file = open(filename,'r')
-        head = file.readline()
+        #head = file.readline()
         head = file.readline()
         stationids = []
         row1 = []
@@ -93,14 +125,34 @@ def read_from_micaps16(filename):
         else:
             dat[:,0] = row1[:]
             dat[:,1] = row2[:]
-        station = DataFrame(dat, index=ids, columns=['lon', 'lat', 'dat'])
+        # level = ['level1']
+        # sta = ['sta2']
+        # time = ['time1', 'time2']
+        # dtime = ['dtime1', 'dtime2', 'dtime3', 'dtime4']
+        if (level is None):
+            level = ['level1']
+        else:
+            level = level
+        if (time is None):
+            time = ['time1', 'time2']
+        else:
+            time = time
+        if (dtime is None):
+            dtime = ['dtime1', 'dtime2', 'dtime3', 'dtime4']
+        else:
+            dtime = dtime
+        station = DataFrame(dat,
+                         columns=pd.MultiIndex.from_product([['lon', 'lat', 'alt', 'data'], ]),
+                         index=pd.MultiIndex.from_product([level, ids, time, dtime]))
+        #station = DataFrame(dat, index=[level,ids,time,dtime], columns=['lon', 'lat','alt','dat'])
         return station
     else:
         print(filename +" not exist")
         return None
 
-
-def read_station(filename,skip = 0):
+#读取站点
+def read_station(filename,skip = 0,time=None,dtime=None,dtime_type="hour",
+                 level= None,level_type="surface"):
     if os.path.exists(filename):
         file = open(filename,'r')
         for i in range(skip):
@@ -131,14 +183,18 @@ def read_station(filename,skip = 0):
         else:
             dat[:,0] = row1[:]
             dat[:,1] = row2[:]
-        station = DataFrame(dat, index=ids, columns=['lon', 'lat', 'data'])
+        station = DataFrame(dat,
+                         columns=pd.MultiIndex.from_product([['lon', 'lat', 'alt', 'data'], ]),
+                         index=pd.MultiIndex.from_product([level, ids, time, dtime]))
+        #station = DataFrame(dat, index=[level,ids,time,dtime,],columns=['lon','lat','alt','data'])
         return station
     else:
         print(filename +" not exist")
         return None
 
-
-def read_from_cimiss_surface(interface_id,time_str,data_code, element_name,sta_levels =None):
+#读取cimiss露表文件
+def read_from_cimiss_surface(interface_id,time_str,data_code, element_name,sta_levels =None,time=None,
+                              dtime=None,dtime_type="hour", level=None,level_type="surface"):
     """
         Retrieve station records from CIMISS by time and station ID.
     >>> time_range = "[20180219000000,20180219010000]"
@@ -179,7 +235,23 @@ def read_from_cimiss_surface(interface_id,time_str,data_code, element_name,sta_l
     if contents['returnCode'] != '0':
         return None
     # construct pandas DataFrame
-    data = pd.DataFrame(contents['DS'])
-    sta = data.set_index(("Station_Id_d"))[['Lon','Lat',element_name]]
-    sta.columns = ['lon', 'lat', 'data']
+
+    if (level is None):
+        level = ['level1']
+    else:
+        level = level
+    if (time is None):
+        time = ['time1', 'time2']
+    else:
+        time = time
+    if (dtime is None):
+        dtime = ['dtime1', 'dtime2', 'dtime3', 'dtime4']
+    else:
+        dtime = dtime
+    sta = DataFrame(contents['DS'],
+                        columns=pd.MultiIndex.from_product([['lon', 'lat', 'alt', 'data'], ]),
+                        index=pd.MultiIndex.from_product(["Station_Id_d", element_name, time, dtime]))
+    # data = pd.DataFrame(contents['DS'])
+    # sta = data.set_index(("Station_Id_d"))[['Lon','Lat',element_name]]
+    # sta.columns = ['lon', 'lat', 'alt','data']
     return sta
