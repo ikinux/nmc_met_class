@@ -24,7 +24,7 @@ import xarray as xr
 
 def sta_data(dframe0,columns):
     '''
-     本函数的目的是，降水一个存储在dframe0数据规范成统一的样式的多层索引的dframe1后返回
+     本函数的目的是，将一个存储在dframe0数据规范成统一的样式的多层索引的dframe1后返回
     dtrame1第一层index为level,第二层Index为站号，第三层index为时间，第四层index为时效,
     数据内容的第一列为经度、第二列为纬度、第三列为高度、第4为要素值，如果列数大于4，则第4列开始为要素值的集合成员值。
     列名称约定记为’lon’, ’lat’, ‘alt’,’data0’,’data1’,…
