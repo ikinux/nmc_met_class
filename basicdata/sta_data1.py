@@ -1,0 +1,74 @@
+import pandas as pd
+import numpy as np
+from pandas import DataFrame
+
+'''
+继承自DataFrame
+第一层index为level,第二层Index为站号，第三层index为时间，第四层index为时效,
+数据内容的第一列为经度、第二列为纬度、第三列为高度、第4为要素值，如果列数大于4，则第4列开始为要素值的集合成员值。
+列名称约定记为’lon’, ’lat’, ‘alt’,’data0’,’data1’,…
+多层索引可以切片，但是：
+1.外层标签必须是经过排序的；
+2.每个索引的外层标签第一个字母必须得一致，要么全是大写，要么全是小写
+'''
+
+
+def sta_data(dframe0, columns):
+    '''
+     本函数的目的是，将一个存储在dframe0数据规范成统一的样式的多层索引的dframe1后返回
+    dtrame1第一层index为level,第二层Index为站号，第三层index为时间，第四层index为时效,
+    数据内容的第一列为经度、第二列为纬度、第三列为高度、第4为要素值，如果列数大于4，则第4列开始为要素值的集合成员值。
+    列名称约定记为’lon’, ’lat’, ‘alt’,’data0’,’data1’,…
+    colunms 是用来指定dframe0里各列的数据类别，以便在本程序中将其放置在索引或数据内容的合适位置
+    '''
+
+    # 将缺省的列填充
+    corr_columns = ['level', 'sta', 'time', 'dtime', 'lon', 'lat', 'alt']
+    dframe0.colmuns = columns
+    for corr_column in corr_columns:
+        if corr_column not in columns:
+            columns_num = corr_columns.index(corr_column)
+            dframe0.insert(columns_num, corr_column, 9999)
+
+    # 将df的列改为规定格式
+    for column in columns:
+        column = column.lower()
+        if column in corr_columns:
+            columns.remove(column)
+
+    columns = corr_columns + columns
+    dframe0 = dframe0[columns]
+
+    new_columns = list(dframe0.columns.values)
+    dframe0.sort_values(by=new_columns[:4],inplace=False)
+    #
+    # 单层索引
+    return dframe0
+
+    # 多层索引
+    # dframe0.set_index(new_columns[:4])
+    # return dframe0
+
+    #
+
+    # 以下是张练艺写的代码，可供参考
+
+    '''
+    columns = ['lon','lat','alt']
+    data_num = dframe.shape[1] - 2
+    for i in range(0,data_num):
+        data = data + str(i)
+        columns.append(data)
+    line = dframe.shape[0]
+    level = ['level1']
+    sta = ['sta2']
+    time = ['time1', 'time2']
+    dtime = ['dtime1', 'dtime2', 'dtime3', 'dtime4']
+    length = len(line) * len(sta) * len(time) * len(dtime)
+    if line == length:
+        return pd.DataFrame(dframe.ix[:,dframe.shape[1]].values,
+                        columns=pd.MultiIndex.from_product([columns,]),
+                        index=pd.MultiIndex.from_product([level,sta,time,dtime]))
+    else:
+        print("索引值不对应，重新检查")
+    '''
