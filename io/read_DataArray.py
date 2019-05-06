@@ -9,7 +9,7 @@ import math
 import xarray as xr
 import pandas as pd
 import datetime
-import lch.test_data_struct.data_structure as ts
+import lch.nmc_met_class.basicdatatrans as ts
 
 #规范化格点（起始经纬度，间隔经度，格点数）
 def grid_ragular(slon,dlon,elon,slat,dlat,elat):
@@ -92,161 +92,44 @@ def read_from_micaps4(filename,grid=None):
         print(filename + "'s format is wrong")
         return None
 
-def read_from_gds_file(filename):
-    print("a")
-    try:
-        if not os.path.exists(filename):
-            print(filename + " is not exist")
-            return None
-        file = open(filename, 'rb')
-        byteArray = file.read()
-        discriminator = struct.unpack("4s", byteArray[:4])[0].decode("gb2312")
-        t = struct.unpack("h", byteArray[4:6])
-        mName = struct.unpack("20s", byteArray[6:26])[0].decode("gb2312")
-        eleName = struct.unpack("50s", byteArray[26:76])[0].decode("gb2312")
-        description = struct.unpack("30s", byteArray[76:106])[0].decode("gb2312")
-        level, y, m, d, h, timezone, period = struct.unpack("fiiiiii", byteArray[106:134])
-        startLon, endLon, lonInterval, lonGridCount = struct.unpack("fffi", byteArray[134:150])
-        startLat, endLat, latInterval, latGridCount = struct.unpack("fffi", byteArray[150:166])
-        isolineStartValue, isolineEndValue, isolineInterval = struct.unpack("fff", byteArray[166:178])
-        gridCount = lonGridCount * latGridCount
-        description = mName.rstrip('\x00') + '_' + eleName.rstrip('\x00') + "_" + str(
-            level) + '(' + description.rstrip('\x00') + ')' + ":" + str(period)
-        if (gridCount == (len(byteArray) - 278) / 4):
-            if (startLat > 90): startLat = 90.0
-            if (startLat < -90): startLat = -90.0
-            if (endLat > 90): endLat = 90.0
-            if (endLat < -90): endLat = -90.0
-            slon1, dlon1, elon1, slat1, dlat1, elat1, nlon1, nlat1 = grid_ragular(startLon, lonInterval, endLon,
-                                                                                   startLat, latInterval, endLat)
-            dat = np.frombuffer(byteArray[278:], dtype='float32').reshape((1, 1, 1, nlat1, nlon1))
-            lon = np.arange(nlon1) * dlon1 + slon1
-            lat = np.arange(nlat1) * dlat1 + slat1
-            times = pd.date_range('2000-01-01', periods=1)
-            da = xr.DataArray(dat, coords={'member': [0], 'time': times, 'level': [0],
-                                           'latitude': lat, 'longitude': lon},
-                              dims=['member', 'time', 'level', 'latitude', 'longitude'])
-            return da
-    except Exception as e:
-        print(e)
-        return None
+def create_micaps4(micaps_abspath, grid_values, label,year,month,day,begin_hour,hour_range,
+                   lon_precision,lat_precision,lon_start,lon_end,lat_start,lat_end):
 
-def read_from_gds(filename,service = None):
+    """
+    输出micaps4格式文件
+    :param micaps_abspath:生成文件绝对路径
+    :param grid_values:格点数组
+    :param label: micaps文件标签
+    :param year:两位年或四位年
+    :param month:两位月
+    :param day:两位日
+    :param begin_hour:起报时
+    :param hour_range:预报时效
+    :param lon_precision:经度精确度
+    :param lat_precision:纬度精确度
+    :param lon_start:起始经度
+    :param lon_end:结束经度
+    :param lat_start:起始纬度
+    :param lat_end:结束纬度
+    :return:
+    """
 
-    try:
-        if(service is None):service = GDS_data_service.service
-        directory,fileName = os.path.split(filename)
-        status, response = byteArrayResult = service.getData(directory, fileName)
-        ByteArrayResult = DataBlock_pb2.ByteArrayResult()
-        if status == 200:
-            ByteArrayResult.ParseFromString(response)
-            if ByteArrayResult is not None:
-                byteArray = ByteArrayResult.byteArray
-
-                file_type = os.path.splitext(filename)
-                if file_type[1] == '.AWX':
-                    return explain_awx_bytes(byteArray)
-                else:
-                    #print(len(byteArray))
-                    discriminator = struct.unpack("4s", byteArray[:4])[0].decode("gb2312")
-                    t = struct.unpack("h", byteArray[4:6])
-                    mName = struct.unpack("20s", byteArray[6:26])[0].decode("gb2312")
-                    eleName = struct.unpack("50s", byteArray[26:76])[0].decode("gb2312")
-                    description = struct.unpack("30s", byteArray[76:106])[0].decode("gb2312")
-                    level, y, m, d, h, timezone, period = struct.unpack("fiiiiii", byteArray[106:134])
-                    startLon, endLon, lonInterval, lonGridCount = struct.unpack("fffi", byteArray[134:150])
-                    startLat, endLat, latInterval, latGridCount = struct.unpack("fffi", byteArray[150:166])
-                    isolineStartValue, isolineEndValue, isolineInterval = struct.unpack("fff", byteArray[166:178])
-                    gridCount = lonGridCount * latGridCount
-                    description = mName.rstrip('\x00') + '_' + eleName.rstrip('\x00') + "_" + str(
-                        level) + '(' + description.rstrip('\x00') + ')' + ":" + str(period)
-                    if (gridCount == (len(byteArray) - 278) / 4):
-                        if(startLat > 90):startLat = 90.0
-                        if(startLat < -90) : startLat = -90.0
-                        if(endLat > 90) : endLat = 90.0
-                        if(endLat < -90): endLat = -90.0
-
-                        slon1, dlon1, elon1, slat1, dlat1, elat1, nlon1, nlat1 = grid_ragular(startLon,lonInterval,endLon,startLat,latInterval,endLat)
-                        dat = np.frombuffer(byteArray[278:], dtype='float32').reshape((1, 1, 1, nlat1, nlon1))
-                        lon = np.arange(nlon1) * dlon1 + slon1
-                        lat = np.arange(nlat1) * dlat1 + slat1
-                        times = pd.date_range('2000-01-01', periods=1)
-                        da = xr.DataArray(dat, coords={'member': [0], 'time': times, 'level': [0],
-                                                       'latitude': lat, 'longitude': lon},
-                                          dims=['member', 'time', 'level', 'latitude', 'longitude'])
-                        return da
-    except Exception as e:
-        print(e)
-        return None
-def read_from_awx(filename):
-    if os.path.exists(filename):
-        file = open(filename,'rb')
-        byte_array = file.read()
-        return explain_awx_bytes(byte_array)
-    else:
-        return None
-def explain_awx_bytes(byteArray):
-    sat96 = struct.unpack("12s", byteArray[:12])[0]
-    levl = np.frombuffer(byteArray[12:30], dtype='int16').astype(dtype = "int32")
-    formatstr = struct.unpack("8s", byteArray[30:38])[0]
-    qualityflag = struct.unpack("h", byteArray[38:40])[0]
-    satellite = struct.unpack("8s", byteArray[40:48])[0]
-    lev2 = np.frombuffer(byteArray[48:104], dtype='int16').astype(dtype = "int32")
-
-    recordlen = levl[4]
-    headnum = levl[5]
-    datanum = levl[6]
-    timenum =lev2[0:5]
-    nlon = lev2[7]
-    nlat = lev2[8]
-    range =lev2[12:16].astype("float32")
-    slat = range[0]/100
-    elat = range[1]/100
-    slon = range[2]/100
-    elon = range[3]/100
-
-    #nintels=lev2[20:22].astype("float32")
-    dlon = (elon - slon) / (nlon-1)
-    dlat = (elat - slat) / (nlat-1)
-
-    slon1, dlon1, elon1, slat1, dlat1, elat1, nlon1, nlat1 = grid_ragular(slon, dlon, elon, slat, dlat, elat)
-
-    colorlen = lev2[24]
-    caliblen = lev2[25]
-    geololen = lev2[26]
-
-    #print(levl)
-    #print(lev2)
-    head_lenght = headnum * recordlen
-    data_lenght = datanum * recordlen
-    #print(head_lenght  + data_lenght)
-    #print( data_lenght)
-    #print(grd.nlon * grd.nlat)
-    #headrest = np.frombuffer(byteArray[:head_lenght], dtype='int8')
-    data_awx = np.frombuffer(byteArray[head_lenght:(head_lenght+data_lenght)], dtype='int8')
-    #print(headrest)
-
-    if colorlen<=0:
-        calib = np.frombuffer(byteArray[104:(104+2048)], dtype='int16').astype(dtype="float32")
-    else:
-        #color = np.frombuffer(byteArray[104:(104+colorlen*2)], dtype='int16')
-        calib = np.frombuffer(byteArray[(104+colorlen*2):(104+colorlen*2+ 2048)], dtype='int16').astype(dtype="float32")
-
-    realcalib = calib /100.0
-    realcalib[calib<0] = (calib[calib<0] + 65536) /100.0
-
-    awx_index = np.empty(len(data_awx),dtype = "int32")
-    awx_index[:] = data_awx[:]
-    awx_index[data_awx <0] = data_awx[data_awx <0] +256
-    awx_index *= 4
-    real_data_awx = realcalib[awx_index]
-
-    dat = real_data_awx.astype(float).reshape((1, 1, 1,  nlat1, nlon1))
-    lon = np.arange(nlon1) * dlon1 + slon1
-    lat = np.arange(nlat1) * dlat1 + slat1
-    times = pd.date_range('2000-01-01', periods=1)
-    da = xr.DataArray(dat, coords={'member': [0], 'time': times, 'level': [0],
-                                   'latitude': lat, 'longitude': lon},
-                      dims=['member', 'time', 'level', 'latitude', 'longitude'])
-    return da
-
+    x_grid_num = (lon_end - lon_start) / lon_precision + 1
+    y_grid_num = (lat_end - lat_start) / lat_precision + 1
+    max_value = math.ceil(max(grid_values.flatten()))
+    min_value = math.ceil(min(grid_values.flatten()))
+    max_value = str(max_value)
+    min_value = str(min_value)
+    #第一行标题
+    title0 = 'diamond 4 %s\n' %label
+    #第二行标题
+    title1 = '%s %s %s %s %s 999 %s %s %s %s %s %s %d %d 4 %s %s 2 0.00' \
+             % (year, month, day, begin_hour, hour_range,
+                lon_precision, lat_precision,
+                lon_start, lon_end, lat_start,
+                lat_end, x_grid_num, y_grid_num,max_value,min_value)
+    title = title0 + title1
+    #二维数组写入micaps文件
+    np.savetxt(micaps_abspath, grid_values, delimiter='  ',
+               fmt='%4.6f', header=title,comments='')
+    print('Create [%s] success'%micaps_abspath)
