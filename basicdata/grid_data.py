@@ -5,11 +5,11 @@ import xarray as xr
 import numpy as np
 import pandas as pd
 import datetime
-import lch.test_data_struct.data_structure as ts
+import lch.nmc_met_class.basicdatas as ts
 import re
 
 #返回一个DataArray，其维度信息和grid描述一致，数组里面的值为0.
-def grid_data(grid):
+def grid_data(grid,data=None):
     slon = grid.slon
     dlon = grid.dlon
     slat = grid.slat
@@ -52,7 +52,10 @@ def grid_data(grid):
         nlevels = 1
     #取出nmember数和levels层数
     nmember = grid.nmember
-    data = np.zeros((nmember, nlevels, ntime, ndt, nlat, nlon))
+    if np.all(data == None):
+        data = np.zeros((nmember, nlevels, ntime, ndt, nlat, nlon))
+    else:
+        data = data.reshape(nmember, nlevels, ntime, ndt, nlat, nlon)
     return (xr.DataArray(data, coords={'member': np.arange(nmember),'level': levels,'time': times,'dt':dts,
                                'lat': lat, 'lon': lon},
                          dims=['member', 'level','time', 'dt','lat', 'lon']))
