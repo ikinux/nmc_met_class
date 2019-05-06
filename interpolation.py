@@ -22,7 +22,6 @@ import time
 reserve_other_dim = false时，你想想返回的结果是什么样的
 '''
 
-
 def linear_xy(da0, grid, reserve_other_dim=False):
     dat0 = da0.values
     # 六维转换为二维的值
@@ -77,46 +76,9 @@ def linear_xy(da0, grid, reserve_other_dim=False):
     c11 = ddx * ddy
     # 一行代码进行循环计算
     datt = (c00 * dat[jj, ii] + c10 * dat[jj2, ii] + c01 * dat[jj, ii2] + c11 * dat[jj2, ii2])
-
     # 最终的结果需要转换为一个六维的数组。
     if reserve_other_dim is False:
-        gtime = grid.gtime
-        if (gtime != None):
-            stime = grid.stime
-            etime = grid.etime
-            gtime = grid.gtime
-            # 通过开始日期，结束日期以及时间间隔来计算times时间序列和ntime序列个数
-            times = pd.date_range(stime, etime, freq=gtime[2])
-            ntime = len(times)
-        else:
-            times = 9999
-            ntime = 1
-        gdt = grid.gdt
-        if (gdt != None):
-            # 根据timedelta的格式，算出ndt次数和gds时效列表
-            edtimedelta = grid.edtimedelta
-            sdtimedelta = grid.sdtimedelta
-            ddtimedelta = grid.ddtimedelta
-            ndt = int((edtimedelta - sdtimedelta) / ddtimedelta)
-            gdt_list = []
-            for i in range(ndt + 1):
-                gdt_list.append(sdtimedelta + ddtimedelta * i)
-            dts = gdt_list
-        else:
-            ndt = 1
-            dts = 9999
-        levels = grid.levels
-        if (levels != None):
-            levels = grid.levels
-            nlevels = len(levels)
-        else:
-            nlevels = 1
-        # 取出nmember数和levels层数
-        nmember = grid.nmember
-        data = datt.reshape(nmember, nlevels, ntime, ndt, datt.shape[0], datt.shape[1])
-        da = xr.DataArray(data, coords={'member': nmember, 'level': levels, 'time': times, 'dt': dts,
-                                        'lat': lat, 'lon': lon},
-                          dims=['nmember', 'levels', 'times', 'dts', 'lat', 'lon'])
+        da = ts.grid_data(grid,datt)
     else:
         nmember = int(len(da0.coords.variables.get(da0.coords.dims[0])))
         nlevel = int(len(da0.coords.variables.get(da0.coords.dims[1])))
