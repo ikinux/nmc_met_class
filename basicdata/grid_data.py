@@ -8,12 +8,21 @@ import datetime
 import lch.nmc_met_class.basicdatas as ts
 import re
 
-
 def set_coords(grd0,level = None,time = None,dtime = None, member = None):
     #如果level 不为None，并且grd0 的level维度上size = 1，则将level方向的坐标统一设置为传入的参数level
     #其它参数类似处理
-    
-    
+    nmember = int(len(grd0.coords.variables.get(grd0.coords.dims[0])))
+    nlevel = int(len(grd0.coords.variables.get(grd0.coords.dims[1])))
+    ntime = int(len(grd0.coords.variables.get(grd0.coords.dims[2])))
+    ndt = int(len(grd0.coords.variables.get(grd0.coords.dims[3])))
+    if (level != None) and (nlevel == 1):
+        grd0.coords["level"] = ("level", level)
+    if (time != None) and (ntime == 1):
+        grd0.coords["time"] = ("time", time)
+    if (dtime != None) and (ndt == 1):
+        grd0.coords["dt"] = ("dt", dtime)
+    if (member != None) and (nmember == 1):
+        grd0.coords["member"] = ("member", member)
     return grd0
 
 #返回一个DataArray，其维度信息和grid描述一致，数组里面的值为0.
