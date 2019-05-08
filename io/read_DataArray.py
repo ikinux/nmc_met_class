@@ -10,6 +10,7 @@ import xarray as xr
 import pandas as pd
 import datetime
 import lch.nmc_met_class.basicdatatrans as ts
+import lch.nmc_met_class.basicdatas as bs
 
 #规范化格点（起始经纬度，间隔经度，格点数）
 def grid_ragular(slon,dlon,elon,slat,dlat,elat):
@@ -92,42 +93,43 @@ def read_from_micaps4(filename,grid=None):
         print(filename + "'s format is wrong")
         return None
 
-def create_micaps4(micaps_abspath, grid_values, label,year,month,day,begin_hour,hour_range,
-                   lon_precision,lat_precision,lon_start,lon_end,lat_start,lat_end):
+def create_micaps4(micaps_abspath,grid_data):
 
     """
     输出micaps4格式文件
     :param micaps_abspath:生成文件绝对路径
-    :param grid_values:格点数组
-    :param label: micaps文件标签
-    :param year:两位年或四位年
-    :param month:两位月
-    :param day:两位日
-    :param begin_hour:起报时
-    :param hour_range:预报时效
-    :param lon_precision:经度精确度
-    :param lat_precision:纬度精确度
-    :param lon_start:起始经度
-    :param lon_end:结束经度
-    :param lat_start:起始纬度
-    :param lat_end:结束纬度
-    :return:
+    :param grid_data:网格数据
     """
-
-    x_grid_num = (lon_end - lon_start) / lon_precision + 1
-    y_grid_num = (lat_end - lat_start) / lat_precision + 1
+    grid = bs.get_grid_of_data(grid_data)
+    nlon = grid.nlon
+    nlat = grid.nlat
+    slon = grid.slon
+    slat = grid.slat
+    elon = grid.elon
+    elat = grid.elat
+    dlon = grid.dlon
+    dlat = grid.dlat
+    stime = grid.stime
+    year = stime[0:4]
+    month = stime[5:6]
+    day = stime[7:8]
+    hour = stime[9:10]
+    hour_range =grid.sdtimedelta
+    values = grid_data.values
+    grid_values = np.squeeze(values)
     max_value = math.ceil(max(grid_values.flatten()))
     min_value = math.ceil(min(grid_values.flatten()))
     max_value = str(max_value)
     min_value = str(min_value)
+
     #第一行标题
-    title0 = 'diamond 4 %s\n' %label
+    title0 = 'diamond 4 %s\n' %stime
     #第二行标题
     title1 = '%s %s %s %s %s 999 %s %s %s %s %s %s %d %d 4 %s %s 2 0.00' \
-             % (year, month, day, begin_hour, hour_range,
-                lon_precision, lat_precision,
-                lon_start, lon_end, lat_start,
-                lat_end, x_grid_num, y_grid_num,max_value,min_value)
+             % (year, month, day, hour, hour_range,
+                dlon, dlat,
+                slon, elon, slat,
+                elat, nlon, nlat,max_value,min_value)
     title = title0 + title1
     #二维数组写入micaps文件
     np.savetxt(micaps_abspath, grid_values, delimiter='  ',
