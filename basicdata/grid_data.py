@@ -8,6 +8,14 @@ import datetime
 import lch.nmc_met_class.basicdatas as ts
 import re
 
+
+def set_coords(grd0,level = None,time = None,dtime = None, member = None):
+    #如果level 不为None，并且grd0 的level维度上size = 1，则将level方向的坐标统一设置为传入的参数level
+    #其它参数类似处理
+    
+    
+    return grd0
+
 #返回一个DataArray，其维度信息和grid描述一致，数组里面的值为0.
 def grid_data(grid,data=None):
     slon = grid.slon
