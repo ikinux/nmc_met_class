@@ -140,14 +140,13 @@ def read_from_nc(filename,member = None,level = None,time = None,dt = None,lat =
     ds = xr.Dataset()
     #1判断要素成员member
     if(member is None):
-        member = "member"
-    if member in ds0.coords or member in list(ds0):
+        member = "ensemble"
+    if member in list(ds0.coords) or member in list(ds0):
         if member in ds0.coords:
             members = ds0.coords[member]
         else:
             members = ds0[member]
             drop_list.append(member)
-
         ds.coords["member"] = ("member", members)
         attrs_name = list(members.attrs)
         for key in attrs_name:
@@ -157,7 +156,7 @@ def read_from_nc(filename,member = None,level = None,time = None,dt = None,lat =
 
     #2判断层次level
     if (level is None):
-        if "level" in ds0.coords or "level" in list(ds0):
+        if "level" in list(ds0.coords) or "level" in list(ds0):
             level = "level"
         elif "lev" in ds0.coords or "lev" in list(ds0):
             level = "lev"
@@ -197,7 +196,7 @@ def read_from_nc(filename,member = None,level = None,time = None,dt = None,lat =
         dt = "dt"
     if dt in ds0.coords or dt in list(ds0):
         if dt in ds0.coords:
-            dtss = ds0.coords[dt]
+            dts = ds0.coords[dt]
         else:
             dts = ds0[dt]
             drop_list.append(dt)
@@ -211,10 +210,10 @@ def read_from_nc(filename,member = None,level = None,time = None,dt = None,lat =
 
     #5判断纬度lat
     if(lat is None):
-        if "lat" in ds0.coords or "lat" in list(ds0):
-            lat = "lat"
-        elif "lat" in ds0.coords or "lat" in list(ds0):
-            lat = "lat"
+        if "latitude" in ds0.coords or "latitude" in list(ds0):
+            lat = "latitude"
+        elif "latitude" in ds0.coords or "latitude" in list(ds0):
+            lat = "latitude"
     if lat in ds0.coords or lat in list(ds0):
         if lat in ds0.coords:
             lats = ds0.coords[lat]
@@ -236,8 +235,8 @@ def read_from_nc(filename,member = None,level = None,time = None,dt = None,lat =
 
     #6判断经度lon
     if(lon is None):
-        if "lon" in ds0.coords or "lon" in list(ds0):
-            lon = "lon"
+        if "longitude" in ds0.coords or "longitude" in list(ds0):
+            lon = "longitude"
         elif "lon" in ds0.coords or "lon" in list(ds0):
             lon = "lon"
     if lon in ds0.coords or lon in list(ds0):
@@ -259,7 +258,6 @@ def read_from_nc(filename,member = None,level = None,time = None,dt = None,lat =
             ds.lon.attrs[key] = lons.attrs[key]
     else:
         ds.coords["lon"] = ("lon",[0])
-
     name_list = list((ds0))
     for name in name_list:
         if name in drop_list: continue
@@ -271,9 +269,8 @@ def read_from_nc(filename,member = None,level = None,time = None,dt = None,lat =
         if size > 1:
             dims = da.dims
             dim_order = {}
-
             for dim in dims:
-                if  "member" in dim.lower():
+                if  "ensemble" in dim.lower():
                     dim_order["member"] = dim
                 elif "time" in dim.lower():
                     dim_order["time"] = dim
