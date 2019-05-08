@@ -212,8 +212,8 @@ def read_from_nc(filename,member = None,level = None,time = None,dt = None,lat =
     if(lat is None):
         if "latitude" in ds0.coords or "latitude" in list(ds0):
             lat = "latitude"
-        elif "latitude" in ds0.coords or "latitude" in list(ds0):
-            lat = "latitude"
+        elif "lat" in ds0.coords or "lat" in list(ds0):
+            lat = "lat"
     if lat in ds0.coords or lat in list(ds0):
         if lat in ds0.coords:
             lats = ds0.coords[lat]
