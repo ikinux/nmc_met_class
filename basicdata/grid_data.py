@@ -17,9 +17,14 @@ def set_coords(grd0,level = None,time = None,dtime = None, member = None):
     ndt = int(len(grd0.coords.variables.get(grd0.coords.dims[3])))
     if (level != None) and (nlevel == 1):
         grd0.coords["level"] = ("level", level)
+    #time和dtime的时候兼容一下datetime 和str两种格式
     if (time != None) and (ntime == 1):
+        if type(time) == str:
+            datetime.datetime.strptime(time, "%Y-%m-%d-%H")
         grd0.coords["time"] = ("time", time)
     if (dtime != None) and (ndt == 1):
+        if type(dtime) == str:
+            datetime.datetime.strptime(dtime, "%Y-%m-%d-%H")
         grd0.coords["dt"] = ("dt", dtime)
     if (member != None) and (nmember == 1):
         grd0.coords["member"] = ("member", member)
