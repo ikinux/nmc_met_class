@@ -8,7 +8,11 @@ import datetime
 import lch.nmc_met_class.basicdatas as ts
 import re
 
-
+def get_from(grd_from,grid_to):
+    #首先根据grid_to定一个初始的网格场grd_to，并且将取值都设为缺省
+    #然后从grd_from 里面找到两个网格重合的区域的那部分取值，将其赋值到grd_to
+    
+    return grd_to
 
 def put_into(grd_from,grd_to)
     #根据grd_form中的坐标信息,判断grd_to 的坐标系能否覆盖前者
