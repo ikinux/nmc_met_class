@@ -5,11 +5,83 @@ import xarray as xr
 import numpy as np
 import pandas as pd
 import datetime
-import lch.test_data_struct.data_structure as ts
+import lch.nmc_met_class.basicdatas as ts
 import re
 
+def get_from(grd_from, grd_to):
+    # 首先根据grid_to定一个初始的网格场grd_to，并且将取值都设为缺省
+    # 然后从grd_from 里面找到两个网格重合的区域的那部分取值，将其赋值到grd_to
+
+    return grd_to
+
+
+def put_into(grd_from, grd_to):
+
+    # 根据grd_form中的坐标信息,判断grd_to 的坐标系能否覆盖前者
+    # 如果能：
+    # 吧 grd_from 中的数据覆盖掉grd_to 中相同的网格部分
+    # 如果不能：
+    # ，在grd_to中将坐标范围扩展成能覆盖前者，扩展出来的网格区域先设置为9999
+    # ，再将grd_from中的值覆盖掉grd_to 中相同的网格部分
+
+    return
+
+
+
+def set_coords(grd0,level = None,time = None,dtime = None, member = None):
+    #如果level 不为None，并且grd0 的level维度上size = 1，则将level方向的坐标统一设置为传入的参数level
+    #其它参数类似处理
+    nmember = int(len(grd0.coords.variables.get(grd0.coords.dims[0])))
+    nlevel = int(len(grd0.coords.variables.get(grd0.coords.dims[1])))
+    ntime = int(len(grd0.coords.variables.get(grd0.coords.dims[2])))
+    ndt = int(len(grd0.coords.variables.get(grd0.coords.dims[3])))
+    if (level != None) and (nlevel == 1):
+        grd0.coords["level"] = ("level", level)
+    #time和dtime的时候兼容一下datetime 和str两种格式
+    if (time != None) and (ntime == 1):
+        time1 = []
+        if type(time) == str:
+            if len(time) == 4:
+                time1.append(time + "0101000000")
+            elif len(time) == 6:
+                time1.append(time + "01000000")
+            elif len(time) == 8:
+                time1.append(time + "000000")
+            elif len(time) == 10:
+                time1.append(time + "0000")
+            elif len(time) == 12:
+                time1.append(time + "00")
+            elif len(time) == 14:
+                time1.append(time)
+            else:
+                print("输入日期有误，请检查！")
+        ttime = datetime.datetime.strptime(time1[0], '%Y%m%d%H%M%S')
+        grd0.coords["time"] = ("time", ttime)
+    if (dtime != None) and (ndt == 1):
+        dtime1 =[]
+        if type(dtime) == str:
+            if len(dtime) == 4:
+                dtime1.append(dtime + "0101000000")
+            elif len(dtime) == 6:
+                dtime1.append(dtime + "01000000")
+            elif len(dtime) == 8:
+                dtime1.append(dtime + "000000")
+            elif len(dtime) == 10:
+                dtime1.append(dtime + "0000")
+            elif len(dtime) == 12:
+                dtime1.append(dtime + "00")
+            elif len(dtime) == 14:
+                dtime1.append(dtime)
+            else:
+                print("输入日期有误，请检查！")
+        ddtime = datetime.datetime.strptime(dtime1[0], '%Y%m%d%H%M%S')
+        grd0.coords["dt"] = ("dt", ddtime)
+    if (member != None) and (nmember == 1):
+        grd0.coords["member"] = ("member", member)
+    return grd0
+
 #返回一个DataArray，其维度信息和grid描述一致，数组里面的值为0.
-def grid_data(grid):
+def grid_data(grid,data=None):
     slon = grid.slon
     dlon = grid.dlon
     slat = grid.slat
@@ -52,7 +124,10 @@ def grid_data(grid):
         nlevels = 1
     #取出nmember数和levels层数
     nmember = grid.nmember
-    data = np.zeros((nmember, nlevels, ntime, ndt, nlat, nlon))
+    if np.all(data == None):
+        data = np.zeros((nmember, nlevels, ntime, ndt, nlat, nlon))
+    else:
+        data = data.reshape(nmember, nlevels, ntime, ndt, nlat, nlon)
     return (xr.DataArray(data, coords={'member': np.arange(nmember),'level': levels,'time': times,'dt':dts,
                                'lat': lat, 'lon': lon},
                          dims=['member', 'level','time', 'dt','lat', 'lon']))
