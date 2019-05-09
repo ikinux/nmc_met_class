@@ -8,6 +8,21 @@ import datetime
 import lch.nmc_met_class.basicdatas as ts
 import re
 
+
+
+def put_into(grd_from,grd_to)
+    #根据grd_form中的坐标信息,判断grd_to 的坐标系能否覆盖前者
+    #如果能：
+        #吧 grd_from 中的数据覆盖掉grd_to 中相同的网格部分
+    #如果不能：
+        #，在grd_to中将坐标范围扩展成能覆盖前者，扩展出来的网格区域先设置为9999
+        #，再将grd_from中的值覆盖掉grd_to 中相同的网格部分
+        
+    return
+
+
+    
+
 def set_coords(grd0,level = None,time = None,dtime = None, member = None):
     #如果level 不为None，并且grd0 的level维度上size = 1，则将level方向的坐标统一设置为传入的参数level
     #其它参数类似处理
